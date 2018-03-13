@@ -54,7 +54,11 @@ badInputSuite =
       assertParseError
         "Oscillator id1 [ output ] Gain id1 [ output ] End"
         "identifier: id1 has already been used"
-    test "unknown reference" do
+    test "output is a reserved identifier" do
+      assertParseError
+        "Oscillator id1 [ output ] Gain output [ id1 ] End"
+        "identifier: output is reserved as the default output node"
+    test "unknown node reference" do
       assertParseError
         "Oscillator id1 [ output ] Gain id2 [ badref ] End"
         "identifier: badref has not been defined"
