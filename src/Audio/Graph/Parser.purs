@@ -3,17 +3,16 @@ module Audio.Graph.Parser (AudioAttributes, AudioAttribute, AudioParam, NodeType
 
 import Control.Alt ((<|>))
 import Data.Either (Either(..))
-import Data.Int (fromString, toNumber)
 import Data.List (List(..), (:))
 import Data.List (singleton) as L
 import Data.Map (Map, empty, fromFoldable)
-import Data.Maybe (fromMaybe)
 import Data.Set (Set, fromFoldable, insert, member, singleton) as Set
 import Data.Tuple (Tuple(..), fst)
-import Prelude (Unit, negate, pure, show, ($), (*), (*>), (<$), (<$>), (<*), (<*>), (<<<), (<>), (=<<), (==), (>>=))
+import Prelude (Unit, pure, show, ($), (*), (*>), (<$), (<$>), (<*), (<*>), (<<<), (<>), (==), (>>=))
 import Text.Parsing.StringParser (Parser(..), ParseError(..), Pos, fail, runParser)
 import Text.Parsing.StringParser.Combinators (choice, many1, optionMaybe, sepBy1, (<?>))
 import Text.Parsing.StringParser.String (string, regex, skipSpaces)
+import Text.Parsing.StringParser.Num (numberOrInt)
 
 -- | an AudioParam
 -- | see https://developer.mozilla.org/en-US/docs/Web/API/AudioParam
@@ -180,33 +179,6 @@ exponentialRampToValueAtTime  =
     <?> "exponentialRampToValueAtTime"
 
 
--- we need to hive this off into a Num parser module later on
-
-toInt :: String -> Int
-toInt s =
-  (fromMaybe 0 <<< fromString) s
-
--- | Parse a numeric sign, returning `1` for positive numbers and `-1`
--- for negative numbers.
-sign :: Parser Int
-sign =
-  fromMaybe 1 <$>
-    optionMaybe (choice [  1 <$ string "+"
-                          , -1 <$ string "-" ])
-
--- | Parse an integer.
-int :: Parser Int
-int =
-  (*)
-    <$> sign
-    <*> (toInt <$> regex "(0|[1-9][0-9]*)")
-    <?> "expected an integer"
-
--- | just cos I'm lazy at the moment, we'll restrict numbers to integers
-number :: Parser Number
-number =
-  toNumber <$> int <* skipSpaces
-  <?> "expected a number"
 
 keyWord :: String -> Parser String
 keyWord s =
@@ -235,6 +207,10 @@ endOfNodes st =
 comma :: Parser String
 comma =
   string "," <* skipSpaces
+
+number :: Parser Number
+number =
+  numberOrInt <* skipSpaces
 
 -- symbol table operations
 

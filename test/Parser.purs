@@ -50,7 +50,7 @@ basicSuite =
     test "1 gain audio param" do
       assertParses ("Gain id1 { gain [ setValue 2 ] } [ output ] End")
     test "2 gain audio params" do
-      assertParses ("Gain id1 { gain [ setValueAtTime 2 1, setValueAtTime 3 2 ] } [ output ] End")
+      assertParses ("Gain id1 { gain [ setValueAtTime 2 0.5, setValueAtTime 3 1.2 ] } [ output ] End")
     test "3 gain audio params" do
       assertParses ("Gain id1 { gain [ setValue 1, setValueAtTime 3 2, linearRampToValueAtTime 6 4 ] } [ output ] End")
 
