@@ -1,6 +1,7 @@
-module Audio.Graph.Parser (AudioParamAttributes, AudioParam, NodeType(..), Node(..), parse) where
+module Audio.Graph.Parser (AudioAttributes, AudioAttribute, AudioParam, NodeType(..), Node(..), parse) where
 
 
+import Control.Alt ((<|>))
 import Data.Either (Either(..))
 import Data.Int (fromString, toNumber)
 import Data.List (List(..), (:))
@@ -9,31 +10,39 @@ import Data.Map (Map, empty, fromFoldable)
 import Data.Maybe (fromMaybe)
 import Data.Set (Set, fromFoldable, insert, member, singleton) as Set
 import Data.Tuple (Tuple(..), fst)
-import Control.Alt ((<|>))
 import Prelude (Unit, negate, pure, show, ($), (*), (*>), (<$), (<$>), (<*), (<*>), (<<<), (<>), (=<<), (==), (>>=))
 import Text.Parsing.StringParser (Parser(..), ParseError(..), Pos, fail, runParser)
 import Text.Parsing.StringParser.Combinators (choice, many1, optionMaybe, sepBy1, (<?>))
 import Text.Parsing.StringParser.String (string, regex, skipSpaces)
 
-
+-- | an AudioParam
+-- | see https://developer.mozilla.org/en-US/docs/Web/API/AudioParam
 data AudioParam =
     SetValue Number
   | SetValueAtTime Number Number
   | LinearRampToValueAtTime Number Number
   | ExponentialRampToValueAtTime Number Number
 
+-- | an Audio Attribute represents the range of types that a node attribute may take
+data AudioAttribute =
+    ANum Number
+  | AParam (List AudioParam)
 
-type AudioParamAttributes = Map String (List AudioParam)
+-- | a mapping of attribute name to value
+type AudioAttributes = Map String AudioAttribute
 
+-- | the type of Audio node.
+-- | in the POC we only support these two
 data NodeType =
    Oscillator
  | Gain
 
+-- | An audio node
 data Node = Node
-    { node :: NodeType
-    , id ::  String
-    , attributes :: AudioParamAttributes
-    , connections :: Set.Set String
+    { node :: NodeType                 -- the node type
+    , id ::  String                    -- its identity
+    , attributes :: AudioAttributes    -- its attributes
+    , connections :: Set.Set String    -- its connections to other modes
     }
 
 type SymbolTable =
@@ -108,23 +117,23 @@ connection st =
 -- audio params
 
 -- placeholder only
-attributes :: Parser AudioParamAttributes
+attributes :: Parser AudioAttributes
 attributes =
   pure empty
 
 -- at the moment we require a gain attribute, nothing more
-gainAttributes :: Parser AudioParamAttributes
+gainAttributes :: Parser AudioAttributes
 gainAttributes =
   (fromFoldable <<< L.singleton) <$>
     (openCurlyBracket *> gainAttribute <* closeCurlyBracket)
 
-gainAttribute :: Parser (Tuple String (List AudioParam))
+gainAttribute :: Parser (Tuple String AudioAttribute)
 gainAttribute =
   Tuple <$> keyWord "gain" <*> audioParams
 
-audioParams :: Parser (List AudioParam)
+audioParams :: Parser AudioAttribute
 audioParams =
-  fullAudioParams <|> simpleAudioParam
+  AParam <$> (fullAudioParams <|> simpleAudioParam)
 
 -- a full set of audio parameters is one or more parameters
 -- separated by commas and framed by square brackets
@@ -253,7 +262,7 @@ checkValidNodeRef st nodeId =
 
 -- builders
 
-buildNode :: NodeType -> Tuple String SymbolTable -> AudioParamAttributes -> Set.Set String -> Tuple Node SymbolTable
+buildNode :: NodeType -> Tuple String SymbolTable -> AudioAttributes -> Set.Set String -> Tuple Node SymbolTable
 buildNode node (Tuple id st) attributes connections =
   Tuple (Node { node, id, attributes, connections}) st
 
