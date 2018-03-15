@@ -1,15 +1,29 @@
-module Audio.Graph.Parser (NodeType(..), Node(..), parse) where
+module Audio.Graph.Parser (AudioParamAttributes, AudioParam, NodeType(..), Node(..), parse) where
 
 
-import Data.List (List(..), (:))
-import Data.Set (Set(..), fromFoldable, insert, member, singleton) as Set
-import Data.Tuple (Tuple(..), fst)
 import Data.Either (Either(..))
-import Prelude (Unit, pure, show, ($), (*>), (<$), (<$>), (<*), (<*>), (<>), (=<<), (==), (>>=))
+import Data.Int (fromString, toNumber)
+import Data.List (List(..), (:))
+import Data.List (singleton) as L
+import Data.Map (Map, empty, fromFoldable)
+import Data.Maybe (fromMaybe)
+import Data.Set (Set, fromFoldable, insert, member, singleton) as Set
+import Data.Tuple (Tuple(..), fst)
+import Control.Alt ((<|>))
+import Prelude (Unit, negate, pure, show, ($), (*), (*>), (<$), (<$>), (<*), (<*>), (<<<), (<>), (=<<), (==), (>>=))
 import Text.Parsing.StringParser (Parser(..), ParseError(..), Pos, fail, runParser)
-import Text.Parsing.StringParser.Combinators (choice, sepBy1, (<?>))
+import Text.Parsing.StringParser.Combinators (choice, many1, optionMaybe, sepBy1, (<?>))
 import Text.Parsing.StringParser.String (string, regex, skipSpaces)
 
+
+data AudioParam =
+    SetValue Number
+  | SetValueAtTime Number Number
+  | LinearRampToValueAtTime Number Number
+  | ExponentialRampToValueAtTime Number Number
+
+
+type AudioParamAttributes = Map String (List AudioParam)
 
 data NodeType =
    Oscillator
@@ -18,6 +32,7 @@ data NodeType =
 data Node = Node
     { node :: NodeType
     , id ::  String
+    , attributes :: AudioParamAttributes
     , connections :: Set.Set String
     }
 
@@ -25,6 +40,7 @@ type SymbolTable =
   { nodeNames :: Set.Set String
   }
 
+-- there is always one implied node named output
 initialSymbolTable :: SymbolTable
 initialSymbolTable =
   { nodeNames : Set.singleton("output") }
@@ -42,8 +58,9 @@ moreNodesOrEnd (Tuple lastNode st) =
       , audioNodes st
       ]
 
--- parse any legitimate audio node and return it a longside the
+-- parse any legitimate audio node and return it alongside the
 -- new symbol table that now also contains its id
+-- the POC just demonstrated oscillator and gain
 audioNode :: SymbolTable -> Parser (Tuple Node SymbolTable)
 audioNode st =
   choice
@@ -54,19 +71,19 @@ audioNode st =
 
 oscillatorNode :: SymbolTable -> Parser (Tuple Node SymbolTable)
 oscillatorNode st =
-  buildNode <$> oscillatorType <*> nodeId st <*> connections st
+  buildNode <$> oscillatorType <*> nodeId st <*> attributes <*> connections st
 
 gainNode :: SymbolTable -> Parser (Tuple Node SymbolTable)
 gainNode st =
-  buildNode <$> gainType <*> nodeId st <*> connections st
+  buildNode <$> gainType <*> nodeId st <*> gainAttributes <*> connections st
 
 oscillatorType :: Parser NodeType
 oscillatorType =
-    Oscillator <$ string "Oscillator" <* skipSpaces
+    Oscillator <$ keyWord "Oscillator"
 
 gainType :: Parser NodeType
 gainType =
-    Gain <$ string "Gain" <* skipSpaces
+    Gain <$ keyWord "Gain"
 
 nodeId :: SymbolTable -> Parser (Tuple String SymbolTable)
 nodeId st =
@@ -88,7 +105,103 @@ connection :: SymbolTable -> Parser String
 connection st =
   identifier >>= (\id -> checkValidNodeRef st id)
 
+-- audio params
 
+-- placeholder only
+attributes :: Parser AudioParamAttributes
+attributes =
+  pure empty
+
+-- at the moment we require a gain attribute, nothing more
+gainAttributes :: Parser AudioParamAttributes
+gainAttributes =
+  (fromFoldable <<< L.singleton) <$>
+    (openCurlyBracket *> gainAttribute <* closeCurlyBracket)
+
+gainAttribute :: Parser (Tuple String (List AudioParam))
+gainAttribute =
+  Tuple <$> keyWord "gain" <*> audioParams
+
+audioParams :: Parser (List AudioParam)
+audioParams =
+  fullAudioParams <|> simpleAudioParam
+
+-- a full set of audio parameters is one or more parameters
+-- separated by commas and framed by square brackets
+fullAudioParams :: Parser (List AudioParam)
+fullAudioParams =
+  openBracket *>  sepBy1 audioParam comma <* closeBracket
+
+-- but we also support s simple version which is just a number and is
+-- entirely equivalent to a singleton list of one SetValue parameter
+simpleAudioParam :: Parser (List AudioParam)
+simpleAudioParam =
+  (L.singleton <<< SetValue) <$> number
+
+audioParam :: Parser AudioParam
+audioParam =
+  choice
+    [
+      setValueAtTime  -- must come before setValue to remove ambiguity
+    , setValue
+    , linearRampToValueAtTime
+    , exponentialRampToValueAtTime
+    ]
+
+setValue :: Parser AudioParam
+setValue =
+  SetValue <$> ((keyWord "setValue") *> number)
+
+setValueAtTime :: Parser AudioParam
+setValueAtTime =
+  SetValueAtTime <$> ((keyWord "setValueAtTime") *>
+    number) <*> number
+    <?> "setValueAtTime"
+
+linearRampToValueAtTime :: Parser AudioParam
+linearRampToValueAtTime  =
+  LinearRampToValueAtTime <$> ((keyWord "linearRampToValueAtTime") *>
+    number) <*> number
+    <?> "linearRampToValueAtTime"
+
+exponentialRampToValueAtTime :: Parser AudioParam
+exponentialRampToValueAtTime  =
+  ExponentialRampToValueAtTime  <$> ((keyWord "exponentialRampToValueAtTime") *>
+    number) <*> number
+    <?> "exponentialRampToValueAtTime"
+
+
+-- we need to hive this off into a Num parser module later on
+
+toInt :: String -> Int
+toInt s =
+  (fromMaybe 0 <<< fromString) s
+
+-- | Parse a numeric sign, returning `1` for positive numbers and `-1`
+-- for negative numbers.
+sign :: Parser Int
+sign =
+  fromMaybe 1 <$>
+    optionMaybe (choice [  1 <$ string "+"
+                          , -1 <$ string "-" ])
+
+-- | Parse an integer.
+int :: Parser Int
+int =
+  (*)
+    <$> sign
+    <*> (toInt <$> regex "(0|[1-9][0-9]*)")
+    <?> "expected an integer"
+
+-- | just cos I'm lazy at the moment, we'll restrict numbers to integers
+number :: Parser Number
+number =
+  toNumber <$> int <* skipSpaces
+  <?> "expected a number"
+
+keyWord :: String -> Parser String
+keyWord s =
+  string s <* skipSpaces
 
 openBracket :: Parser String
 openBracket =
@@ -98,9 +211,21 @@ closeBracket :: Parser String
 closeBracket =
   string "]" <* skipSpaces
 
+openCurlyBracket :: Parser String
+openCurlyBracket =
+  string "{" <* skipSpaces
+
+closeCurlyBracket :: Parser String
+closeCurlyBracket =
+  string "}" <* skipSpaces
+
 endOfNodes :: SymbolTable -> Parser (Tuple (List Node) SymbolTable)
 endOfNodes st =
   Tuple Nil st <$ string "End"
+
+comma :: Parser String
+comma =
+  string "," <* skipSpaces
 
 -- symbol table operations
 
@@ -128,15 +253,15 @@ checkValidNodeRef st nodeId =
 
 -- builders
 
-buildNode :: NodeType -> Tuple String SymbolTable -> Set.Set String -> Tuple Node SymbolTable
-buildNode node (Tuple id st) connections =
-  Tuple (Node { node, id, connections}) st
+buildNode :: NodeType -> Tuple String SymbolTable -> AudioParamAttributes -> Set.Set String -> Tuple Node SymbolTable
+buildNode node (Tuple id st) attributes connections =
+  Tuple (Node { node, id, attributes, connections}) st
 
 buildNodeList :: Tuple Node SymbolTable -> Tuple (List Node) SymbolTable -> Tuple (List Node) SymbolTable
-buildNodeList (Tuple n st) (Tuple ns _) =
+buildNodeList (Tuple n _) (Tuple ns st) =
   Tuple (n : ns) st
 
-  -- | Parse a normalised MIDI string.
+-- | Parse an audio graph
 parse :: String -> Either String (List Node)
 parse s =
   case runParser (audioNodes initialSymbolTable) s of
