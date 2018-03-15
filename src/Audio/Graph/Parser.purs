@@ -1,48 +1,23 @@
-module Audio.Graph.Parser (AudioAttributes, AudioAttribute, AudioParam, NodeType(..), Node(..), parse) where
+module Audio.Graph.Parser (parse) where
 
+-- | Parse a web-audio-graph DSL
 
 import Control.Alt ((<|>))
 import Data.Either (Either(..))
 import Data.List (List(..), (:))
 import Data.List (singleton) as L
-import Data.Map (Map, empty, fromFoldable)
+import Data.Map (empty, fromFoldable)
 import Data.Set (Set, fromFoldable, insert, member, singleton) as Set
+import Data.Int (toNumber)
 import Data.Tuple (Tuple(..), fst)
-import Prelude (Unit, pure, show, ($), (*), (*>), (<$), (<$>), (<*), (<*>), (<<<), (<>), (==), (>>=))
-import Text.Parsing.StringParser (Parser(..), ParseError(..), Pos, fail, runParser)
-import Text.Parsing.StringParser.Combinators (choice, many1, optionMaybe, sepBy1, (<?>))
+import Prelude (pure, show, ($), (*>), (<$), (<$>), (<*), (<*>), (<<<), (<>), (==), (>>=))
+import Text.Parsing.StringParser (Parser, fail, runParser)
+import Text.Parsing.StringParser.Combinators (choice, many, sepBy1, (<?>))
 import Text.Parsing.StringParser.String (string, regex, skipSpaces)
-import Text.Parsing.StringParser.Num (numberOrInt)
+import Text.Parsing.StringParser.Num (numberOrInt, unsignedInt)
+import Audio.Graph
+import Audio.WebAudio.Oscillator (readOscillatorType)
 
--- | an AudioParam
--- | see https://developer.mozilla.org/en-US/docs/Web/API/AudioParam
-data AudioParam =
-    SetValue Number
-  | SetValueAtTime Number Number
-  | LinearRampToValueAtTime Number Number
-  | ExponentialRampToValueAtTime Number Number
-
--- | an Audio Attribute represents the range of types that a node attribute may take
-data AudioAttribute =
-    ANum Number
-  | AParam (List AudioParam)
-
--- | a mapping of attribute name to value
-type AudioAttributes = Map String AudioAttribute
-
--- | the type of Audio node.
--- | in the POC we only support these two
-data NodeType =
-   Oscillator
- | Gain
-
--- | An audio node
-data Node = Node
-    { node :: NodeType                 -- the node type
-    , id ::  String                    -- its identity
-    , attributes :: AudioAttributes    -- its attributes
-    , connections :: Set.Set String    -- its connections to other modes
-    }
 
 type SymbolTable =
   { nodeNames :: Set.Set String
@@ -79,24 +54,23 @@ audioNode st =
 
 oscillatorNode :: SymbolTable -> Parser (Tuple Node SymbolTable)
 oscillatorNode st =
-  buildNode <$> oscillatorType <*> nodeId st <*> attributes <*> connections st
+  buildNode <$> oscillatorNodeType <*> nodeId st <*> oscillatorAttributes <*> connections st
 
 gainNode :: SymbolTable -> Parser (Tuple Node SymbolTable)
 gainNode st =
-  buildNode <$> gainType <*> nodeId st <*> gainAttributes <*> connections st
+  buildNode <$> gainNodeType <*> nodeId st <*> gainAttributes <*> connections st
 
-oscillatorType :: Parser NodeType
-oscillatorType =
-    Oscillator <$ keyWord "Oscillator"
+oscillatorNodeType :: Parser NodeType
+oscillatorNodeType =
+  Oscillator <$ keyWord "Oscillator"
 
-gainType :: Parser NodeType
-gainType =
-    Gain <$ keyWord "Gain"
+gainNodeType :: Parser NodeType
+gainNodeType =
+  Gain <$ keyWord "Gain"
 
 nodeId :: SymbolTable -> Parser (Tuple String SymbolTable)
 nodeId st =
   identifier >>= (\id -> checkValidNodeId st id)
-
 
 identifier :: Parser String
 identifier = regex "[a-z][a-zA-Z0-9]*" <* skipSpaces
@@ -120,6 +94,8 @@ attributes :: Parser AudioAttributes
 attributes =
   pure empty
 
+-- gain attributes
+
 -- at the moment we require a gain attribute, nothing more
 gainAttributes :: Parser AudioAttributes
 gainAttributes =
@@ -129,6 +105,47 @@ gainAttributes =
 gainAttribute :: Parser (Tuple String AudioAttribute)
 gainAttribute =
   Tuple <$> keyWord "gain" <*> audioParams
+
+-- oscillator attributes
+
+oscillatorAttributes :: Parser AudioAttributes
+oscillatorAttributes =
+  fromFoldable <$>
+    (openCurlyBracket *> oscillatorAttributeList <* closeCurlyBracket)
+
+oscillatorAttributeList :: Parser (List (Tuple String AudioAttribute))
+oscillatorAttributeList =
+  many
+    (choice
+      [
+        oscillatorTypeAttribute
+      , frequency
+      ]
+    )
+
+oscillatorTypeAttribute :: Parser (Tuple String AudioAttribute)
+oscillatorTypeAttribute =
+  Tuple <$> keyWord "type" <*> oscillatorType
+
+oscillatorType :: Parser AudioAttribute
+oscillatorType =
+  (AOscillatorType <<< readOscillatorType) <$>
+    choice
+      [
+        keyWord "sine"
+      , keyWord "square"
+      , keyWord "sawtooth"
+      , keyWord "triangle"
+      , keyWord "custom"
+      ]
+        <?> "oscillator type"
+
+frequency :: Parser (Tuple String AudioAttribute)
+frequency =
+  Tuple <$> keyWord "frequency" <*> intAttribute
+    <?> "frequency"
+
+-- general audio params
 
 audioParams :: Parser AudioAttribute
 audioParams =
@@ -178,7 +195,7 @@ exponentialRampToValueAtTime  =
     number) <*> number
     <?> "exponentialRampToValueAtTime"
 
-
+-- low level parsers
 
 keyWord :: String -> Parser String
 keyWord s =
@@ -211,6 +228,10 @@ comma =
 number :: Parser Number
 number =
   numberOrInt <* skipSpaces
+
+intAttribute :: Parser AudioAttribute
+intAttribute =
+  (ANum <<< toNumber) <$> unsignedInt <* skipSpaces
 
 -- symbol table operations
 

@@ -1,4 +1,4 @@
-module Text.Parsing.StringParser.Num (int, number, numberOrInt, sign) where
+module Text.Parsing.StringParser.Num (int, unsignedInt, number, numberOrInt, sign) where
 
 -- | Possible useful eventual additions to StringParser
 -- | to enable parsing of numeric strings
@@ -28,6 +28,13 @@ int =
     <$> sign
     <*> (toInt <$> regex "(0|[1-9][0-9]*)")
     <?> "expected an integer"
+
+-- | Parse an unsigned integer.
+unsignedInt :: Parser Int
+unsignedInt =
+  (toInt <$> regex "(0|[1-9][0-9]*)")
+    <?> "expected an unsigned integer"
+
 
 -- | Parse a number
 number :: Parser Number
