@@ -15,7 +15,9 @@ import Text.Parsing.StringParser (Parser, fail, runParser)
 import Text.Parsing.StringParser.Combinators (choice, many, sepBy1, (<?>))
 import Text.Parsing.StringParser.String (string, regex, skipSpaces)
 import Text.Parsing.StringParser.Num (numberOrInt, unsignedInt)
-import Audio.Graph (AudioGraph, AudioAttributes, AudioAttribute(..), AudioParam(..), NodeType(..), NodeDef(..))
+import Audio.Graph (AudioGraph, NodeType(..), NodeDef(..))
+import Audio.Graph.Attributes (AudioAttribute, AttributeMap, AudioParam(..),
+    oscillatorTypeAttr, numberAttr, audioParamsAttr)
 import Audio.WebAudio.Oscillator (readOscillatorType)
 
 
@@ -90,14 +92,14 @@ connection st =
 -- audio params
 
 -- placeholder only
-attributes :: Parser AudioAttributes
+attributes :: Parser AttributeMap
 attributes =
   pure empty
 
 -- gain attributes
 
 -- at the moment we require a gain attribute, nothing more
-gainAttributes :: Parser AudioAttributes
+gainAttributes :: Parser AttributeMap
 gainAttributes =
   (fromFoldable <<< L.singleton) <$>
     (openCurlyBracket *> gainAttribute <* closeCurlyBracket)
@@ -108,7 +110,7 @@ gainAttribute =
 
 -- oscillator attributes
 
-oscillatorAttributes :: Parser AudioAttributes
+oscillatorAttributes :: Parser AttributeMap
 oscillatorAttributes =
   fromFoldable <$>
     (openCurlyBracket *> oscillatorAttributeList <* closeCurlyBracket)
@@ -129,7 +131,7 @@ oscillatorTypeAttribute =
 
 oscillatorType :: Parser AudioAttribute
 oscillatorType =
-  (AOscillatorType <<< readOscillatorType) <$>
+  (oscillatorTypeAttr <<< readOscillatorType) <$>
     choice
       [
         keyWord "sine"
@@ -149,7 +151,7 @@ frequency =
 
 audioParams :: Parser AudioAttribute
 audioParams =
-  AParam <$> (fullAudioParams <|> simpleAudioParam)
+  audioParamsAttr <$> (fullAudioParams <|> simpleAudioParam)
 
 -- a full set of audio parameters is one or more parameters
 -- separated by commas and framed by square brackets
@@ -231,7 +233,7 @@ number =
 
 intAttribute :: Parser AudioAttribute
 intAttribute =
-  (ANum <<< toNumber) <$> unsignedInt <* skipSpaces
+  (numberAttr <<< toNumber) <$> unsignedInt <* skipSpaces
 
 -- symbol table operations
 
@@ -259,7 +261,7 @@ checkValidNodeRef st nodeId =
 
 -- builders
 
-buildNode :: NodeType -> Tuple String SymbolTable -> AudioAttributes -> Set.Set String -> Tuple NodeDef SymbolTable
+buildNode :: NodeType -> Tuple String SymbolTable -> AttributeMap -> Set.Set String -> Tuple NodeDef SymbolTable
 buildNode nodeType (Tuple id st) attributes connections =
   Tuple (NodeDef{ nodeType, id, attributes, connections}) st
 

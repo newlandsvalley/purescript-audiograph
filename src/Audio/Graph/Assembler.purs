@@ -1,17 +1,17 @@
 module Audio.Graph.Assembler (assemble) where
 
 import Audio.Graph
+import Audio.Graph.Attributes (AttributeMap,
+  setOscillatorTypeAttr, setFrequencyAttr)
 
 import Audio.WebAudio.AudioContext (createBufferSource, createOscillator, createGain, decodeAudioData, destination, makeAudioContext)
 import Audio.WebAudio.Types (WebAudio, AudioContext, AudioNode(..), OscillatorNode, GainNode, connect)
-import Audio.WebAudio.Oscillator (setFrequency)
 import Control.Monad.Eff (Eff)
 import Data.Foldable (traverse_, foldM)
 import Data.Map (insert, lookup, singleton)
 import Data.Maybe (Maybe(..))
 import Data.Set (Set)
-import Data.Map (lookup)
-import Prelude (Unit, bind, pure, unit, (>>=))
+import Prelude (Unit, bind, pure, unit)
 
 assemble :: ∀ eff. AudioGraph -> (Eff (wau :: WebAudio | eff) Assemblage)
 assemble graph = do
@@ -36,6 +36,7 @@ assembleOscillator :: ∀ eff. AudioContext -> Assemblage -> NodeDef-> (Eff (wau
 assembleOscillator ctx ass (NodeDef nd) = do
   oscNode <- createOscillator ctx
   _ <- setConnections (Oscillator oscNode) ass nd.connections
+  _ <- setOscillatorAttributes oscNode nd.attributes
   let
     ass' = insert nd.id (Oscillator oscNode) ass
   pure ass'
@@ -78,3 +79,8 @@ setConnection sourceNode ass target =
       pure unit
 
 -- attributes
+
+setOscillatorAttributes :: ∀ eff. OscillatorNode -> AttributeMap -> (Eff (wau :: WebAudio | eff) Unit)
+setOscillatorAttributes osc map = do
+  _ <- setOscillatorTypeAttr osc map
+  setFrequencyAttr osc map
