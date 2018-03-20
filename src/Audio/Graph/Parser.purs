@@ -16,7 +16,7 @@ import Text.Parsing.StringParser.Combinators (choice, many, sepBy1, (<?>))
 import Text.Parsing.StringParser.String (string, regex, skipSpaces)
 import Text.Parsing.StringParser.Num (numberOrInt, unsignedInt)
 import Audio.Graph (AudioGraph, NodeType(..), NodeDef(..))
-import Audio.Graph.Attributes (AudioAttribute, AttributeMap, AudioParam(..),
+import Audio.Graph.Attributes (AudioAttribute, AttributeMap, AudioParamDef(..),
     oscillatorTypeAttr, numberAttr, audioParamsAttr)
 import Audio.WebAudio.Oscillator (readOscillatorType)
 
@@ -155,17 +155,17 @@ audioParams =
 
 -- a full set of audio parameters is one or more parameters
 -- separated by commas and framed by square brackets
-fullAudioParams :: Parser (List AudioParam)
+fullAudioParams :: Parser (List AudioParamDef)
 fullAudioParams =
   openBracket *>  sepBy1 audioParam comma <* closeBracket
 
 -- but we also support s simple version which is just a number and is
 -- entirely equivalent to a singleton list of one SetValue parameter
-simpleAudioParam :: Parser (List AudioParam)
+simpleAudioParam :: Parser (List AudioParamDef)
 simpleAudioParam =
   (L.singleton <<< SetValue) <$> number
 
-audioParam :: Parser AudioParam
+audioParam :: Parser AudioParamDef
 audioParam =
   choice
     [
@@ -175,23 +175,23 @@ audioParam =
     , exponentialRampToValueAtTime
     ]
 
-setValue :: Parser AudioParam
+setValue :: Parser AudioParamDef
 setValue =
   SetValue <$> ((keyWord "setValue") *> number)
 
-setValueAtTime :: Parser AudioParam
+setValueAtTime :: Parser AudioParamDef
 setValueAtTime =
   SetValueAtTime <$> ((keyWord "setValueAtTime") *>
     number) <*> number
     <?> "setValueAtTime"
 
-linearRampToValueAtTime :: Parser AudioParam
+linearRampToValueAtTime :: Parser AudioParamDef
 linearRampToValueAtTime  =
   LinearRampToValueAtTime <$> ((keyWord "linearRampToValueAtTime") *>
     number) <*> number
     <?> "linearRampToValueAtTime"
 
-exponentialRampToValueAtTime :: Parser AudioParam
+exponentialRampToValueAtTime :: Parser AudioParamDef
 exponentialRampToValueAtTime  =
   ExponentialRampToValueAtTime  <$> ((keyWord "exponentialRampToValueAtTime") *>
     number) <*> number
