@@ -1,10 +1,12 @@
 module Audio.Graph
- (AudioAttributes, AudioAttribute(..), AudioParam(..), NodeType(..), Node(..)) where
+ (AudioAttributes, AudioAttribute(..), AudioParam(..), NodeType(..), NodeDef(..),
+  AudioGraph,  Assemblage) where
 
+import Audio.WebAudio.Oscillator (OscillatorType)
+import Audio.WebAudio.Types (AudioNode)
 import Data.List (List)
 import Data.Map (Map)
 import Data.Set (Set)
-import Audio.WebAudio.Oscillator (OscillatorType(..))
 
 -- | an AudioParam
 -- | see https://developer.mozilla.org/en-US/docs/Web/API/AudioParam
@@ -26,13 +28,17 @@ type AudioAttributes = Map String AudioAttribute
 -- | the type of Audio node.
 -- | in the POC we only support these two
 data NodeType =
-   Oscillator
- | Gain
+   OscillatorType
+ | GainType
 
--- | An audio node
-data Node = Node
-    { node :: NodeType                 -- the node type
+-- | An audio node definition
+data NodeDef = NodeDef
+    { nodeType :: NodeType             -- the node type
     , id ::  String                    -- its identity
     , attributes :: AudioAttributes    -- its attributes
     , connections :: Set String        -- its connections to other modes
     }
+
+type AudioGraph = List NodeDef
+
+type Assemblage = Map String AudioNode

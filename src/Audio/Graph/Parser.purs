@@ -15,7 +15,7 @@ import Text.Parsing.StringParser (Parser, fail, runParser)
 import Text.Parsing.StringParser.Combinators (choice, many, sepBy1, (<?>))
 import Text.Parsing.StringParser.String (string, regex, skipSpaces)
 import Text.Parsing.StringParser.Num (numberOrInt, unsignedInt)
-import Audio.Graph
+import Audio.Graph (AudioGraph, AudioAttributes, AudioAttribute(..), AudioParam(..), NodeType(..), NodeDef(..))
 import Audio.WebAudio.Oscillator (readOscillatorType)
 
 
@@ -29,11 +29,11 @@ initialSymbolTable =
   { nodeNames : Set.singleton("output") }
 
 
-audioNodes :: SymbolTable -> Parser (Tuple (List Node) SymbolTable)
+audioNodes :: SymbolTable -> Parser (Tuple AudioGraph SymbolTable)
 audioNodes st =
   audioNode st >>= (\state -> moreNodesOrEnd state)
 
-moreNodesOrEnd :: Tuple Node SymbolTable -> Parser (Tuple (List Node) SymbolTable)
+moreNodesOrEnd :: Tuple NodeDef SymbolTable -> Parser (Tuple AudioGraph SymbolTable)
 moreNodesOrEnd (Tuple lastNode st) =
   buildNodeList (Tuple lastNode st) <$>
     choice
@@ -44,7 +44,7 @@ moreNodesOrEnd (Tuple lastNode st) =
 -- parse any legitimate audio node and return it alongside the
 -- new symbol table that now also contains its id
 -- the POC just demonstrated oscillator and gain
-audioNode :: SymbolTable -> Parser (Tuple Node SymbolTable)
+audioNode :: SymbolTable -> Parser (Tuple NodeDef SymbolTable)
 audioNode st =
   choice
     [
@@ -52,21 +52,21 @@ audioNode st =
     , gainNode st
     ]
 
-oscillatorNode :: SymbolTable -> Parser (Tuple Node SymbolTable)
+oscillatorNode :: SymbolTable -> Parser (Tuple NodeDef SymbolTable)
 oscillatorNode st =
   buildNode <$> oscillatorNodeType <*> nodeId st <*> oscillatorAttributes <*> connections st
 
-gainNode :: SymbolTable -> Parser (Tuple Node SymbolTable)
+gainNode :: SymbolTable -> Parser (Tuple NodeDef SymbolTable)
 gainNode st =
   buildNode <$> gainNodeType <*> nodeId st <*> gainAttributes <*> connections st
 
 oscillatorNodeType :: Parser NodeType
 oscillatorNodeType =
-  Oscillator <$ keyWord "Oscillator"
+  OscillatorType <$ keyWord "Oscillator"
 
 gainNodeType :: Parser NodeType
 gainNodeType =
-  Gain <$ keyWord "Gain"
+  GainType <$ keyWord "Gain"
 
 nodeId :: SymbolTable -> Parser (Tuple String SymbolTable)
 nodeId st =
@@ -217,7 +217,7 @@ closeCurlyBracket :: Parser String
 closeCurlyBracket =
   string "}" <* skipSpaces
 
-endOfNodes :: SymbolTable -> Parser (Tuple (List Node) SymbolTable)
+endOfNodes :: SymbolTable -> Parser (Tuple AudioGraph SymbolTable)
 endOfNodes st =
   Tuple Nil st <$ string "End"
 
@@ -259,16 +259,16 @@ checkValidNodeRef st nodeId =
 
 -- builders
 
-buildNode :: NodeType -> Tuple String SymbolTable -> AudioAttributes -> Set.Set String -> Tuple Node SymbolTable
-buildNode node (Tuple id st) attributes connections =
-  Tuple (Node { node, id, attributes, connections}) st
+buildNode :: NodeType -> Tuple String SymbolTable -> AudioAttributes -> Set.Set String -> Tuple NodeDef SymbolTable
+buildNode nodeType (Tuple id st) attributes connections =
+  Tuple (NodeDef{ nodeType, id, attributes, connections}) st
 
-buildNodeList :: Tuple Node SymbolTable -> Tuple (List Node) SymbolTable -> Tuple (List Node) SymbolTable
+buildNodeList :: Tuple NodeDef SymbolTable -> Tuple (List NodeDef) SymbolTable -> Tuple AudioGraph SymbolTable
 buildNodeList (Tuple n _) (Tuple ns st) =
   Tuple (n : ns) st
 
 -- | Parse an audio graph
-parse :: String -> Either String (List Node)
+parse :: String -> Either String AudioGraph
 parse s =
   case runParser (audioNodes initialSymbolTable) s of
     Right n ->
