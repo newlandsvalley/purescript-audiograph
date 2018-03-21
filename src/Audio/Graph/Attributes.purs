@@ -2,9 +2,13 @@ module Audio.Graph.Attributes
   (AudioAttribute, AttributeMap, AudioParamDef(..),
    addOscillatorType, addFrequency,
    getOscillatorType, getNumber,
-   setOscillatorTypeAttr, setFrequencyAttr,
+   setOscillatorTypeAttr, setFrequencyAttr, setGainAttr,
    oscillatorTypeAttr, numberAttr, audioParamsAttr
    ) where
+
+-- | Audio node attributes.  These are either simple or consist of
+-- | AudioParams (https://developer.mozilla.org/en-US/docs/Web/API/AudioParam)
+-- | which have special properties
 
 import Prelude (Unit, ($), (<$>), (<$), (#), (>>=), id, bind, pure, unit)
 import Control.Monad.Eff (Eff)

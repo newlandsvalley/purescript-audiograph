@@ -45,8 +45,8 @@ basicSuite :: forall t. Free (TestF t) Unit
 basicSuite =
   suite "basic" do
     test "2 nodes" do
-      assertParses ("Oscillator id1 {} [ output ] " <>
-                    "Gain id2 { gain 2 } [ id1 ] End")
+      assertParses ("Gain id1 { gain 2 } [ output ] " <>
+                    "Oscillator id2 {} [ id1 ] End")
     test "1 gain audio param" do
       assertParses ("Gain id1 { gain [ setValue 2 ] } [ output ] End")
     test "2 gain audio params" do
@@ -65,13 +65,13 @@ badInputSuite =
   suite "bad input" do
     test "duplicate node id" do
       assertParseError
-        "Oscillator id1 {} [ output ] Gain id1 { gain 3 } [ output ] End"
+        "Gain id1 { gain 3 } [ output ] Oscillator id1 {} [ output ] End"
         "identifier: id1 has already been used"
     test "output is a reserved identifier" do
       assertParseError
-        "Oscillator id1 {} [ output ] Gain output { gain 2 } [ id1 ] End"
+        "Gain output { gain 2 } [ id1 ] Oscillator id1 {} [ output ] End"
         "identifier: output is reserved as the default output node"
     test "unknown node reference" do
       assertParseError
-        "Oscillator id1 {} [ output ] Gain id2 { gain 2 } [ badref ] End"
+        "Gain id1 { gain 2 } [ output ] Oscillator id2 {} [ badref ] End"
         "identifier: badref has not been defined"

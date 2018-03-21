@@ -1,31 +1,38 @@
 module Audio.Graph.Assembler (assemble) where
 
+-- | Assemble an Audio Graph definition into a working assemblage of audio nodes
+
 import Audio.Graph
 import Audio.Graph.Attributes (AttributeMap,
-  setOscillatorTypeAttr, setFrequencyAttr)
+  setOscillatorTypeAttr, setFrequencyAttr, setGainAttr)
 
 import Audio.WebAudio.AudioContext (createBufferSource, createOscillator, createGain, decodeAudioData, destination, makeAudioContext)
 import Audio.WebAudio.Types (WebAudio, AudioContext, AudioNode(..), OscillatorNode, GainNode, connect)
 import Control.Monad.Eff (Eff)
 import Data.Foldable (traverse_, foldM)
-import Data.Map (insert, lookup, singleton)
+import Data.Map (insert, lookup, singleton, size)
 import Data.Maybe (Maybe(..))
 import Data.Set (Set)
-import Prelude (Unit, bind, pure, unit)
+import Prelude (Unit, bind, pure, show, unit, (<>), ($))
+
+import Debug.Trace (trace)
 
 assemble :: ∀ eff. AudioGraph -> (Eff (wau :: WebAudio | eff) Assemblage)
-assemble graph = do
-  ctx <- makeAudioContext
-  destNode <- destination ctx
-  -- the assembled nodes always contain a destination node called 'output'
-  let
-    ass = singleton "output" (Destination destNode)
-    --  foldM :: forall f m a b. Foldable f => Monad m => (a -> b -> m a) -> a -> f b -> m a
-  ass' <- foldM (assembleNode ctx) ass graph
-  pure ass'
+assemble graph =
+  trace "assembling graph" \_ ->
+  do
+    ctx <- makeAudioContext
+    destNode <- destination ctx
+    -- the assembled nodes always contain a destination node called 'output'
+    let
+      ass = singleton "output" (Destination destNode)
+      --  foldM :: forall f m a b. Foldable f => Monad m => (a -> b -> m a) -> a -> f b -> m a
+    ass' <- foldM (assembleNode ctx) ass graph
+    pure ass'
 
 assembleNode :: ∀ eff. AudioContext -> Assemblage -> NodeDef-> (Eff (wau :: WebAudio | eff) Assemblage)
 assembleNode ctx ass (NodeDef nd) =
+  trace ("assemblage size: " <> (show $ size ass)) \_ ->
   case nd.nodeType of
     OscillatorType -> assembleOscillator ctx ass (NodeDef nd)
     GainType-> assembleGain ctx ass (NodeDef nd)
@@ -33,21 +40,26 @@ assembleNode ctx ass (NodeDef nd) =
 -- nodes
 
 assembleOscillator :: ∀ eff. AudioContext -> Assemblage -> NodeDef-> (Eff (wau :: WebAudio | eff) Assemblage)
-assembleOscillator ctx ass (NodeDef nd) = do
-  oscNode <- createOscillator ctx
-  _ <- setConnections (Oscillator oscNode) ass nd.connections
-  _ <- setOscillatorAttributes oscNode nd.attributes
-  let
-    ass' = insert nd.id (Oscillator oscNode) ass
-  pure ass'
+assembleOscillator ctx ass (NodeDef nd) =
+  trace ("assembling oscillator id: " <> nd.id) \_ ->
+  do
+    oscNode <- createOscillator ctx
+    _ <- setConnections (Oscillator oscNode) ass nd.connections
+    _ <- setOscillatorAttributes oscNode nd.attributes
+    let
+      ass' = insert nd.id (Oscillator oscNode) ass
+    pure ass'
 
 assembleGain :: ∀ eff. AudioContext -> Assemblage -> NodeDef-> (Eff (wau :: WebAudio | eff) Assemblage)
-assembleGain ctx ass (NodeDef nd) = do
-  gainNode <- createGain ctx
-  _ <- setConnections (Gain gainNode) ass nd.connections
-  let
-    ass' = insert nd.id (Gain gainNode) ass
-  pure ass'
+assembleGain ctx ass (NodeDef nd) =
+  trace ("assembling gain id: " <> nd.id) \_ ->
+  do
+    gainNode <- createGain ctx
+    _ <- setConnections (Gain gainNode) ass nd.connections
+    _ <- setGainAttributes gainNode nd.attributes
+    let
+      ass' = insert nd.id (Gain gainNode) ass
+    pure ass'
 
 -- connections
 
@@ -57,13 +69,16 @@ setConnections sourceNode ass targets =
 
 setConnection :: ∀ eff. AudioNode -> Assemblage -> String  -> (Eff (wau :: WebAudio | eff) Unit)
 setConnection sourceNode ass target =
+  trace ("connecting to target: " <> target) \_ ->
   case lookup target ass of
     Just targetNode ->
       -- this is very verbose but I haven't yet found a mechanism of generalising it
       case sourceNode of
         Gain n ->
+          trace "source is Gain" \_ ->
           connect n targetNode
         Oscillator n ->
+          trace "source is Oscillator" \_ ->
           connect n targetNode
         AudioBufferSource n ->
           connect n targetNode
@@ -74,6 +89,7 @@ setConnection sourceNode ass target =
         Analyser n ->
           connect n targetNode
         Destination n ->
+          trace "source is output Destination!" \_ ->
           connect n targetNode
     _ ->
       pure unit
@@ -84,3 +100,7 @@ setOscillatorAttributes :: ∀ eff. OscillatorNode -> AttributeMap -> (Eff (wau 
 setOscillatorAttributes osc map = do
   _ <- setOscillatorTypeAttr osc map
   setFrequencyAttr osc map
+
+setGainAttributes :: ∀ eff. GainNode -> AttributeMap -> (Eff (wau :: WebAudio | eff) Unit)
+setGainAttributes gain map = do
+  setGainAttr gain map

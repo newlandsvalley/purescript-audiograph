@@ -2,11 +2,12 @@ module Audio.Graph
  (NodeType(..), NodeDef(..),
   AudioGraph,  Assemblage) where
 
-import Audio.WebAudio.Oscillator (OscillatorType)
+-- | Audio Graph data type
+
 import Audio.WebAudio.Types (AudioNode)
-import Audio.Graph.Attributes (AudioAttribute, AttributeMap)
-import Data.List (List)
+import Audio.Graph.Attributes (AttributeMap)
 import Data.Map (Map)
+import Data.List (List)
 import Data.Set (Set)
 
 
@@ -24,6 +25,8 @@ data NodeDef = NodeDef
     , connections :: Set String        -- its connections to other modes
     }
 
+-- | A full graph
 type AudioGraph = List NodeDef
 
+-- | A run-time assemblage of nodes built from the graph
 type Assemblage = Map String AudioNode
