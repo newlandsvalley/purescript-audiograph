@@ -24,7 +24,8 @@ main = do
     _ <- liftEff' $ play ctx 3.0 example1
     delay (Milliseconds $ 4000.0)
     -}
-    liftEff' $ play ctx 3.0 example2
+    -- liftEff' $ play ctx 3.0 example1
+    liftEff' $ play ctx 2.0 example2
 
 play :: forall e. AudioContext -> Number -> String -> Eff (console :: CONSOLE, wau :: WebAudio | e) Unit
 play ctx duration text =
@@ -50,6 +51,6 @@ example1 =
 
 example2 :: String
 example2 =
-  "Gain id1 { gain [ setValue 0.1, linearRampToValueAtTime 2 2.0 ] } [ output ] " <>
+  "Gain id1 { gain [ setValue 0.1, exponentialRampToValueAtTime 2 2.0 ] } [ output ] " <>
   "Oscillator id2 { type sawtooth frequency 240 } [ id1 ] " <>
   "End"

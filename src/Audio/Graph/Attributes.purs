@@ -14,7 +14,7 @@ module Audio.Graph.Attributes
 import Prelude (Unit, ($), (<$>), (<$), (#), (>>=), id, bind, pure, unit)
 import Control.Monad.Eff (Eff)
 import Audio.WebAudio.Types (WebAudio, OscillatorNode, GainNode, BiquadFilterNode, AudioParam)
-import Audio.WebAudio.Oscillator (OscillatorType, setFrequency, setOscillatorType)
+import Audio.WebAudio.Oscillator (OscillatorType, frequency, setFrequency, setOscillatorType)
 import Audio.WebAudio.BiquadFilterNode (BiquadFilterType, setFilterType)
 import Audio.WebAudio.GainNode (gain)
 import Audio.WebAudio.AudioParam (setValue, getValue, setValueAtTime,
@@ -147,11 +147,13 @@ setBiquadFilterTypeAttr  bqf map =
 
 setFrequencyAttr :: ∀ eff. OscillatorNode -> AttributeMap -> Eff ( wau :: WebAudio | eff) Unit
 setFrequencyAttr osc map =
-  case getNumber "frequency" map of
-    Just t ->
-      setFrequency t osc
-    _ ->
+  case getAudioParams "frequency" map of
+    Nil ->
       pure unit
+    ps ->
+      do
+        frequencyParam <- frequency osc
+        setParams frequencyParam ps
 
 setGainAttr :: ∀ eff. GainNode -> AttributeMap -> Eff ( wau :: WebAudio | eff) Unit
 setGainAttr gainNode map =

@@ -156,7 +156,7 @@ oscillatorType =
 
 frequency :: Parser (Tuple String AudioAttribute)
 frequency =
-  Tuple <$> keyWord "frequency" <*> intAttribute
+  Tuple <$> keyWord "frequency" <*> audioParams
     <?> "frequency"
 
 biquadFilterAttributes :: Parser AttributeMap
