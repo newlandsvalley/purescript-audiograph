@@ -47,6 +47,10 @@ basicSuite =
     test "2 nodes" do
       assertParses ("Gain id1 { gain 2 } [ output ] " <>
                     "Oscillator id2 {} [ id1 ] End")
+    test "3 nodes" do
+      assertParses ("Gain id1 { gain 2 } [ output ] " <>
+                    "BiquadFilter id2 { frequency 400 } [ id1 ] " <>
+                    "Oscillator id3 {} [ id2 ] End")
     test "1 gain audio param" do
       assertParses ("Gain id1 { gain [ setValue 2 ] } [ output ] End")
     test "2 gain audio params" do
@@ -59,6 +63,8 @@ basicSuite =
       assertParses ("Oscillator id1 { frequency 440 } [ output ] End")
     test "biquad filter type" do
       assertParses ("BiquadFilter id1 { type lowpass } [ output ] End")
+    test "biquad filter frequency" do
+      assertParses ("BiquadFilter id1 { frequency 80 } [ output ] End")
 
 
 badInputSuite :: forall t. Free (TestF t) Unit

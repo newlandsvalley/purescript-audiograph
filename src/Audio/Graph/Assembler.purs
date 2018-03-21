@@ -4,7 +4,8 @@ module Audio.Graph.Assembler (assemble) where
 
 import Audio.Graph
 import Audio.Graph.Attributes (AttributeMap,
-  setOscillatorTypeAttr, setFrequencyAttr, setGainAttr, setBiquadFilterTypeAttr)
+  setOscillatorTypeAttr, setOscillatorFrequencyAttr, setGainAttr, setBiquadFilterTypeAttr,
+  setBiquadFilterFrequencyAttr)
 
 import Audio.WebAudio.AudioContext (createBufferSource, createOscillator, createGain, createBiquadFilter,
     decodeAudioData, destination)
@@ -110,12 +111,13 @@ setConnection sourceNode ass target =
 setOscillatorAttributes :: ∀ eff. OscillatorNode -> AttributeMap -> (Eff (wau :: WebAudio | eff) Unit)
 setOscillatorAttributes osc map = do
   _ <- setOscillatorTypeAttr osc map
-  setFrequencyAttr osc map
+  setOscillatorFrequencyAttr osc map
 
 setGainAttributes :: ∀ eff. GainNode -> AttributeMap -> (Eff (wau :: WebAudio | eff) Unit)
 setGainAttributes gain map = do
   setGainAttr gain map
 
 setBiquadFilterAttributes :: ∀ eff. BiquadFilterNode -> AttributeMap -> (Eff (wau :: WebAudio | eff) Unit)
-setBiquadFilterAttributes biquadFilter map = do
-  setBiquadFilterTypeAttr biquadFilter map
+setBiquadFilterAttributes bqf map = do
+  _ <- setBiquadFilterTypeAttr bqf map
+  setBiquadFilterFrequencyAttr bqf map

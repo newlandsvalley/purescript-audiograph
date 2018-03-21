@@ -55,6 +55,7 @@ audioNode st =
     , gainNode st
     , biquadFilterNode st
     ]
+      <?> "audio node"
 
 oscillatorNode :: SymbolTable -> Parser (Tuple NodeDef SymbolTable)
 oscillatorNode st =
@@ -170,6 +171,7 @@ biquadFilterAttributeList =
     (choice
       [
         biquadFilterTypeAttribute
+      , frequency
       ]
     )
 

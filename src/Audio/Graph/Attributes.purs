@@ -2,9 +2,9 @@ module Audio.Graph.Attributes
   (AudioAttribute, AttributeMap, AudioParamDef(..),
    addOscillatorType, addFrequency,
    getOscillatorType, getNumber,
-   setOscillatorTypeAttr, setFrequencyAttr, setGainAttr,
+   setOscillatorTypeAttr, setOscillatorFrequencyAttr, setGainAttr,
    oscillatorTypeAttr, numberAttr, audioParamsAttr,
-   biquadFilterTypeAttr, setBiquadFilterTypeAttr
+   biquadFilterTypeAttr, setBiquadFilterTypeAttr, setBiquadFilterFrequencyAttr
    ) where
 
 -- | Audio node attributes.  These are either simple or consist of
@@ -15,7 +15,7 @@ import Prelude (Unit, ($), (<$>), (<$), (#), (>>=), id, bind, pure, unit)
 import Control.Monad.Eff (Eff)
 import Audio.WebAudio.Types (WebAudio, OscillatorNode, GainNode, BiquadFilterNode, AudioParam)
 import Audio.WebAudio.Oscillator (OscillatorType, frequency, setFrequency, setOscillatorType)
-import Audio.WebAudio.BiquadFilterNode (BiquadFilterType, setFilterType)
+import Audio.WebAudio.BiquadFilterNode (BiquadFilterType, setFilterType, filterFrequency)
 import Audio.WebAudio.GainNode (gain)
 import Audio.WebAudio.AudioParam (setValue, getValue, setValueAtTime,
   linearRampToValueAtTime, exponentialRampToValueAtTime, cancelScheduledValues)
@@ -145,8 +145,9 @@ setBiquadFilterTypeAttr  bqf map =
     _ ->
       pure unit
 
-setFrequencyAttr :: ∀ eff. OscillatorNode -> AttributeMap -> Eff ( wau :: WebAudio | eff) Unit
-setFrequencyAttr osc map =
+-- | set the oscillator frequency
+setOscillatorFrequencyAttr :: ∀ eff. OscillatorNode -> AttributeMap -> Eff ( wau :: WebAudio | eff) Unit
+setOscillatorFrequencyAttr osc map =
   case getAudioParams "frequency" map of
     Nil ->
       pure unit
@@ -154,6 +155,18 @@ setFrequencyAttr osc map =
       do
         frequencyParam <- frequency osc
         setParams frequencyParam ps
+
+-- | set the biquad filter frequency
+setBiquadFilterFrequencyAttr :: ∀ eff. BiquadFilterNode -> AttributeMap -> Eff ( wau :: WebAudio | eff) Unit
+setBiquadFilterFrequencyAttr bqf map =
+  case getAudioParams "frequency" map of
+    Nil ->
+      pure unit
+    ps ->
+      do
+        frequencyParam <- filterFrequency bqf
+        setParams frequencyParam ps
+
 
 setGainAttr :: ∀ eff. GainNode -> AttributeMap -> Eff ( wau :: WebAudio | eff) Unit
 setGainAttr gainNode map =
