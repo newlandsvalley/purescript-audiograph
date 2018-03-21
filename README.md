@@ -26,6 +26,8 @@ or a cowbell example:
   End
 ```
 
+Each line defines a new Audio node in the graph starting with the node type and being immediately followed by its id.  The curly braces define attributes for the node which are either simple scalar values or else complex Audio Params (contained within square braces). The final square braces hold the connections from that node to any other node(s). An implicit Destination node, named output, is always present by default. 
+
 Contributing
 ------------
 
