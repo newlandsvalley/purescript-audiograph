@@ -6,7 +6,7 @@ import Audio.Graph
 import Audio.Graph.Attributes (AttributeMap,
   setOscillatorTypeAttr, setFrequencyAttr, setGainAttr)
 
-import Audio.WebAudio.AudioContext (createBufferSource, createOscillator, createGain, decodeAudioData, destination, makeAudioContext)
+import Audio.WebAudio.AudioContext (createBufferSource, createOscillator, createGain, decodeAudioData, destination)
 import Audio.WebAudio.Types (WebAudio, AudioContext, AudioNode(..), OscillatorNode, GainNode, connect)
 import Control.Monad.Eff (Eff)
 import Data.Foldable (traverse_, foldM)
@@ -17,11 +17,10 @@ import Prelude (Unit, bind, pure, show, unit, (<>), ($))
 
 import Debug.Trace (trace)
 
-assemble :: ∀ eff. AudioGraph -> (Eff (wau :: WebAudio | eff) Assemblage)
-assemble graph =
+assemble :: ∀ eff. AudioContext -> AudioGraph -> (Eff (wau :: WebAudio | eff) Assemblage)
+assemble ctx graph =
   trace "assembling graph" \_ ->
   do
-    ctx <- makeAudioContext
     destNode <- destination ctx
     -- the assembled nodes always contain a destination node called 'output'
     let
@@ -75,10 +74,8 @@ setConnection sourceNode ass target =
       -- this is very verbose but I haven't yet found a mechanism of generalising it
       case sourceNode of
         Gain n ->
-          trace "source is Gain" \_ ->
           connect n targetNode
         Oscillator n ->
-          trace "source is Oscillator" \_ ->
           connect n targetNode
         AudioBufferSource n ->
           connect n targetNode
@@ -89,7 +86,6 @@ setConnection sourceNode ass target =
         Analyser n ->
           connect n targetNode
         Destination n ->
-          trace "source is output Destination!" \_ ->
           connect n targetNode
     _ ->
       pure unit
