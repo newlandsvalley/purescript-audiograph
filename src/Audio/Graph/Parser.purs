@@ -17,8 +17,9 @@ import Text.Parsing.StringParser.String (string, regex, skipSpaces)
 import Text.Parsing.StringParser.Num (numberOrInt, unsignedInt)
 import Audio.Graph (AudioGraph, NodeType(..), NodeDef(..))
 import Audio.Graph.Attributes (AudioAttribute, AttributeMap, AudioParamDef(..),
-    oscillatorTypeAttr, numberAttr, audioParamsAttr)
+    oscillatorTypeAttr, numberAttr, audioParamsAttr, biquadFilterTypeAttr)
 import Audio.WebAudio.Oscillator (readOscillatorType)
+import Audio.WebAudio.BiquadFilterNode (readBiquadFilterType)
 
 
 type SymbolTable =
@@ -52,6 +53,7 @@ audioNode st =
     [
       oscillatorNode st
     , gainNode st
+    , biquadFilterNode st
     ]
 
 oscillatorNode :: SymbolTable -> Parser (Tuple NodeDef SymbolTable)
@@ -62,6 +64,11 @@ gainNode :: SymbolTable -> Parser (Tuple NodeDef SymbolTable)
 gainNode st =
   buildNode <$> gainNodeType <*> nodeId st <*> gainAttributes <*> connections st
 
+biquadFilterNode :: SymbolTable -> Parser (Tuple NodeDef SymbolTable)
+biquadFilterNode st =
+  buildNode <$> biquadFilterNodeType <*> nodeId st <*> biquadFilterAttributes <*> connections st
+
+
 oscillatorNodeType :: Parser NodeType
 oscillatorNodeType =
   OscillatorType <$ keyWord "Oscillator"
@@ -69,6 +76,10 @@ oscillatorNodeType =
 gainNodeType :: Parser NodeType
 gainNodeType =
   GainType <$ keyWord "Gain"
+
+biquadFilterNodeType :: Parser NodeType
+biquadFilterNodeType =
+  BiquadFilterType <$ keyWord "BiquadFilter"
 
 nodeId :: SymbolTable -> Parser (Tuple String SymbolTable)
 nodeId st =
@@ -92,9 +103,10 @@ connection st =
 -- audio params
 
 -- placeholder only
-attributes :: Parser AttributeMap
-attributes =
-  pure empty
+noAttributes :: Parser AttributeMap
+noAttributes =
+  (pure empty) <$
+      openCurlyBracket <*> closeCurlyBracket
 
 -- gain attributes
 
@@ -146,6 +158,40 @@ frequency :: Parser (Tuple String AudioAttribute)
 frequency =
   Tuple <$> keyWord "frequency" <*> intAttribute
     <?> "frequency"
+
+biquadFilterAttributes :: Parser AttributeMap
+biquadFilterAttributes =
+  fromFoldable <$>
+    (openCurlyBracket *> biquadFilterAttributeList <* closeCurlyBracket)
+
+biquadFilterAttributeList :: Parser (List (Tuple String AudioAttribute))
+biquadFilterAttributeList =
+  many
+    (choice
+      [
+        biquadFilterTypeAttribute
+      ]
+    )
+
+biquadFilterTypeAttribute :: Parser (Tuple String AudioAttribute)
+biquadFilterTypeAttribute =
+  Tuple <$> keyWord "type" <*> biquadFilterType
+
+biquadFilterType :: Parser AudioAttribute
+biquadFilterType =
+  (biquadFilterTypeAttr <<< readBiquadFilterType) <$>
+    choice
+      [
+        keyWord "lowpass"
+      , keyWord "highpass"
+      , keyWord "bandpass"
+      , keyWord "lowshelf"
+      , keyWord "highshelf"
+      , keyWord "peaking"
+      , keyWord "notch"
+      , keyWord "allpass"
+      ]
+        <?> "biquad filter type"
 
 -- general audio params
 

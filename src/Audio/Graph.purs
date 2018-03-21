@@ -16,6 +16,7 @@ import Data.Set (Set)
 data NodeType =
    OscillatorType
  | GainType
+ | BiquadFilterType
 
 -- | An audio node definition
 data NodeDef = NodeDef

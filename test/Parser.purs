@@ -57,7 +57,8 @@ basicSuite =
       assertParses ("Oscillator id1 { type square } [ output ] End")
     test "oscillator frequency" do
       assertParses ("Oscillator id1 { frequency 440 } [ output ] End")
-
+    test "biquad filter type" do
+      assertParses ("BiquadFilter id1 { type lowpass } [ output ] End")
 
 
 badInputSuite :: forall t. Free (TestF t) Unit

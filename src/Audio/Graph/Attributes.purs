@@ -3,7 +3,8 @@ module Audio.Graph.Attributes
    addOscillatorType, addFrequency,
    getOscillatorType, getNumber,
    setOscillatorTypeAttr, setFrequencyAttr, setGainAttr,
-   oscillatorTypeAttr, numberAttr, audioParamsAttr
+   oscillatorTypeAttr, numberAttr, audioParamsAttr,
+   biquadFilterTypeAttr, setBiquadFilterTypeAttr
    ) where
 
 -- | Audio node attributes.  These are either simple or consist of
@@ -12,8 +13,9 @@ module Audio.Graph.Attributes
 
 import Prelude (Unit, ($), (<$>), (<$), (#), (>>=), id, bind, pure, unit)
 import Control.Monad.Eff (Eff)
-import Audio.WebAudio.Types (WebAudio, OscillatorNode, GainNode, AudioParam)
+import Audio.WebAudio.Types (WebAudio, OscillatorNode, GainNode, BiquadFilterNode, AudioParam)
 import Audio.WebAudio.Oscillator (OscillatorType, setFrequency, setOscillatorType)
+import Audio.WebAudio.BiquadFilterNode (BiquadFilterType, setFilterType)
 import Audio.WebAudio.GainNode (gain)
 import Audio.WebAudio.AudioParam (setValue, getValue, setValueAtTime,
   linearRampToValueAtTime, exponentialRampToValueAtTime, cancelScheduledValues)
@@ -24,8 +26,12 @@ import Data.Symbol (SProxy(..))
 import Data.Foldable (traverse_)
 import Data.Variant (Variant, inj, on, default)
 
+
 -- | an attribute of an audio node
-type AudioAttribute = Variant (oscillatorType :: OscillatorType, number :: Number, audioParams :: List AudioParamDef)
+type AudioAttribute = Variant ( oscillatorType :: OscillatorType
+                              , biquadFilterType :: BiquadFilterType
+                              , number :: Number
+                              , audioParams :: List AudioParamDef)
 
 -- | a map of a set of such (named) attributes
 type AttributeMap = Map String AudioAttribute
@@ -40,6 +46,7 @@ data AudioParamDef =
 
 -- data types
 _oscillatorType = SProxy :: SProxy "oscillatorType"
+_biquadFilterType = SProxy :: SProxy "biquadFilterType"
 _number = SProxy :: SProxy "number"
 _audioParams = SProxy :: SProxy "audioParams"
 
@@ -47,6 +54,10 @@ _audioParams = SProxy :: SProxy "audioParams"
 oscillatorTypeAttr :: OscillatorType -> AudioAttribute
 oscillatorTypeAttr t =
   inj _oscillatorType t
+
+biquadFilterTypeAttr :: BiquadFilterType -> AudioAttribute
+biquadFilterTypeAttr t =
+  inj _biquadFilterType t
 
 numberAttr :: Number -> AudioAttribute
 numberAttr t =
@@ -96,6 +107,15 @@ getOscillatorType map =
         default Nothing
           # on _oscillatorType Just
 
+getBiquadFilterType :: AttributeMap -> Maybe BiquadFilterType
+getBiquadFilterType map =
+  (lookup "type" map) >>= getBiquadVal
+    where
+      getBiquadVal :: AudioAttribute -> Maybe BiquadFilterType
+      getBiquadVal =
+        default Nothing
+          # on _biquadFilterType Just
+
 -- | get a named Number attribute
 getNumber :: String -> AttributeMap -> Maybe Number
 getNumber attName map =
@@ -114,6 +134,14 @@ setOscillatorTypeAttr osc map =
   case getOscillatorType map of
     Just t ->
       setOscillatorType t osc
+    _ ->
+      pure unit
+
+setBiquadFilterTypeAttr :: ∀ eff. BiquadFilterNode -> AttributeMap -> Eff ( wau :: WebAudio | eff) Unit
+setBiquadFilterTypeAttr  bqf map =
+  case getBiquadFilterType map of
+    Just t ->
+      setFilterType t bqf
     _ ->
       pure unit
 

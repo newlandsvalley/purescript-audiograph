@@ -4,10 +4,12 @@ module Audio.Graph.Assembler (assemble) where
 
 import Audio.Graph
 import Audio.Graph.Attributes (AttributeMap,
-  setOscillatorTypeAttr, setFrequencyAttr, setGainAttr)
+  setOscillatorTypeAttr, setFrequencyAttr, setGainAttr, setBiquadFilterTypeAttr)
 
-import Audio.WebAudio.AudioContext (createBufferSource, createOscillator, createGain, decodeAudioData, destination)
-import Audio.WebAudio.Types (WebAudio, AudioContext, AudioNode(..), OscillatorNode, GainNode, connect)
+import Audio.WebAudio.AudioContext (createBufferSource, createOscillator, createGain, createBiquadFilter,
+    decodeAudioData, destination)
+import Audio.WebAudio.Types (WebAudio, AudioContext, AudioNode(..), OscillatorNode, GainNode,
+  BiquadFilterNode, connect)
 import Control.Monad.Eff (Eff)
 import Data.Foldable (traverse_, foldM)
 import Data.Map (insert, lookup, singleton, size)
@@ -35,6 +37,7 @@ assembleNode ctx ass (NodeDef nd) =
   case nd.nodeType of
     OscillatorType -> assembleOscillator ctx ass (NodeDef nd)
     GainType-> assembleGain ctx ass (NodeDef nd)
+    BiquadFilterType-> assembleBiquadFilter ctx ass (NodeDef nd)
 
 -- nodes
 
@@ -59,6 +62,18 @@ assembleGain ctx ass (NodeDef nd) =
     let
       ass' = insert nd.id (Gain gainNode) ass
     pure ass'
+
+assembleBiquadFilter :: ∀ eff. AudioContext -> Assemblage -> NodeDef-> (Eff (wau :: WebAudio | eff) Assemblage)
+assembleBiquadFilter ctx ass (NodeDef nd) =
+  trace ("assembling biquad filter id: " <> nd.id) \_ ->
+  do
+    biquadFilterNode <- createBiquadFilter ctx
+    _ <- setConnections (BiquadFilter biquadFilterNode) ass nd.connections
+    _ <- setBiquadFilterAttributes biquadFilterNode nd.attributes
+    let
+      ass' = insert nd.id (BiquadFilter biquadFilterNode) ass
+    pure ass'
+
 
 -- connections
 
@@ -100,3 +115,7 @@ setOscillatorAttributes osc map = do
 setGainAttributes :: ∀ eff. GainNode -> AttributeMap -> (Eff (wau :: WebAudio | eff) Unit)
 setGainAttributes gain map = do
   setGainAttr gain map
+
+setBiquadFilterAttributes :: ∀ eff. BiquadFilterNode -> AttributeMap -> (Eff (wau :: WebAudio | eff) Unit)
+setBiquadFilterAttributes biquadFilter map = do
+  setBiquadFilterTypeAttr biquadFilter map
