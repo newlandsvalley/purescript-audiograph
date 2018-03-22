@@ -1,9 +1,9 @@
 module Audio.Graph.Attributes
   (AudioAttribute, AttributeMap, AudioParamDef(..),
    addOscillatorType, addFrequency,
-   getOscillatorType, getNumber,
+   getOscillatorType, getNumber, getString,
    setOscillatorTypeAttr, setOscillatorFrequencyAttr, setGainAttr,
-   oscillatorTypeAttr, numberAttr, audioParamsAttr,
+   oscillatorTypeAttr, numberAttr, stringAttr, audioParamsAttr,
    biquadFilterTypeAttr, setBiquadFilterTypeAttr, setBiquadFilterFrequencyAttr
    ) where
 
@@ -27,10 +27,11 @@ import Data.Foldable (traverse_)
 import Data.Variant (Variant, inj, on, default)
 
 
--- | an attribute of an audio node
+-- | the (type of) an attribute of an audio node
 type AudioAttribute = Variant ( oscillatorType :: OscillatorType
                               , biquadFilterType :: BiquadFilterType
                               , number :: Number
+                              , string :: String
                               , audioParams :: List AudioParamDef)
 
 -- | a map of a set of such (named) attributes
@@ -48,6 +49,7 @@ data AudioParamDef =
 _oscillatorType = SProxy :: SProxy "oscillatorType"
 _biquadFilterType = SProxy :: SProxy "biquadFilterType"
 _number = SProxy :: SProxy "number"
+_string = SProxy :: SProxy "string"
 _audioParams = SProxy :: SProxy "audioParams"
 
 -- variant builders
@@ -62,6 +64,10 @@ biquadFilterTypeAttr t =
 numberAttr :: Number -> AudioAttribute
 numberAttr t =
   inj _number t
+
+stringAttr :: String -> AudioAttribute
+stringAttr t =
+  inj _string t
 
 audioParamsAttr :: List AudioParamDef -> AudioAttribute
 audioParamsAttr t =
@@ -90,6 +96,11 @@ getVNumber :: AudioAttribute -> Maybe Number
 getVNumber =
     default Nothing
       # on _number Just
+
+getVString :: AudioAttribute -> Maybe String
+getVString =
+    default Nothing
+      # on _string Just
 
 getVAudioParams :: AudioAttribute -> List AudioParamDef
 getVAudioParams  =
@@ -121,6 +132,10 @@ getNumber :: String -> AttributeMap -> Maybe Number
 getNumber attName map =
   (lookup attName map) >>= getVNumber
 
+-- | get a named String attribute
+getString :: String -> AttributeMap -> Maybe String
+getString attName map =
+  (lookup attName map) >>= getVString
 
 -- | get a named audio Params attribute
 getAudioParams :: String -> AttributeMap -> List AudioParamDef

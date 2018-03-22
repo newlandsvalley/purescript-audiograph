@@ -65,6 +65,9 @@ basicSuite =
       assertParses ("BiquadFilter id1 { type lowpass } [ output ] End")
     test "biquad filter frequency" do
       assertParses ("BiquadFilter id1 { frequency 80 } [ output ] End")
+    test "audio buffer source url" do
+      assertParses ("AudioBufferSource id1 { url  wav/techno.wav } [ output ] End")
+
 
 
 badInputSuite :: forall t. Free (TestF t) Unit

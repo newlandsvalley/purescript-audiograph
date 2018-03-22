@@ -4,30 +4,33 @@ import Prelude
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Console (CONSOLE, log)
 import Control.Monad.Aff (Aff, Fiber, delay, liftEff', launchAff)
-import Data.Either (Either(..))
+import Network.HTTP.Affjax (AJAX)
+import Data.Either (Either(..), either)
 import Data.Time.Duration (Milliseconds(..))
 
 
 import Audio.WebAudio.Types (WebAudio, AudioContext)
 import Audio.WebAudio.AudioContext (makeAudioContext)
 import Audio.Graph.Parser (parse)
+import Audio.Graph.ResourceLoader (loadBuffers)
 import Audio.Graph.Assembler (assemble)
 import Audio.Graph.Control (start, stop)
+import Audio.Graph (Assemblage)
 
-main :: forall e. Eff (console :: CONSOLE, wau :: WebAudio | e)
-    (Fiber (console :: CONSOLE, wau :: WebAudio | e) Unit)
+
+main :: forall e. Eff (ajax :: AJAX, console :: CONSOLE, wau :: WebAudio | e) Unit
 main = do
-  ctx <- makeAudioContext
-  launchAff $ do
     {- at the moment I can't play more than one sample
        do I need somehow to clean up the AudioContext before reuse?
     _ <- liftEff' $ play ctx 3.0 example1
     delay (Milliseconds $ 4000.0)
     -}
-    -- liftEff' $ play ctx 3.0 example1
-    liftEff' $ play ctx 2.0 example3
+    ctx <- makeAudioContext
+    _ <- launchAff $ play ctx 2.0 example4
+    pure unit
 
-play :: forall e. AudioContext -> Number -> String -> Eff (console :: CONSOLE, wau :: WebAudio | e) Unit
+play :: forall e. AudioContext -> Number -> String
+     -> Aff (ajax :: AJAX, console :: CONSOLE, wau :: WebAudio | e) Unit
 play ctx duration text =
   let
     audioGraph=
@@ -35,12 +38,18 @@ play ctx duration text =
   in
     case audioGraph of
       Left err ->
-        log ("parse error: " <> err)
+        liftEff' $ log ("parse error: " <> err)
       Right graph ->
         do
-          assemblage <- assemble ctx graph
-          start 0.0 assemblage
-          stop duration assemblage
+          assemblage <- liftEff' $ assemble ctx graph
+          audioBuffers <- loadBuffers ctx graph
+          liftEff' $ either (\err -> log ("load error: " <> err)) (\_ -> startThenStop duration assemblage) audioBuffers
+
+startThenStop :: forall e. Number -> Assemblage
+     -> Eff (console :: CONSOLE, wau :: WebAudio | e) Unit
+startThenStop duration assemblage = do
+  _ <- start 0.0 assemblage
+  stop duration assemblage
 
 
 example1 :: String
@@ -55,45 +64,6 @@ example2 =
   "Oscillator id2 { type sawtooth frequency 240 } [ id1 ] " <>
   "End"
 
-{-
-now <- currentTime ctx
-  -- we make the basic bell sound from a couple of frequencies
-  -- the first oscillator
-  osc1 <- createOscillator ctx
-  _ <- setOscillatorType Square osc1
-  _ <- setFrequency 800.0 osc1
-
-  -- the second oscillator
-  osc2 <- createOscillator ctx
-  _ <- setOscillatorType Square osc2
-  _ <- setFrequency 540.0 osc2
-
-  -- the gain
-  gainNode <- createGain ctx
-  gainParam <- gain gainNode
-  _ <- setValue 0.5 gainParam
-  -- set the start gain
-  _ <- setValueAtTime 0.5 now gainParam
-  -- gradually reduce the amplitude to a minimum value of 0.01
-  _ <- exponentialRampToValueAtTime 0.01 (now + 1.0) gainParam
-
-  -- the filter
-  filter <- createBiquadFilter ctx
-  _ <- setFilterType Bandpass filter
-  -- the bandpass filter concentrates on passing through a narrow band of
-  -- frequencies centered around the one supplied, attenuating the others
-  freqParam <- filterFrequency filter
-  _ <- setValue 800.0 freqParam
-
-  dst <- destination ctx
-
-  -- connect it all up
-  _ <- connect osc1 gainNode
-  _ <- connect osc2 gainNode
-  _ <- connect gainNode filter
-  _ <- connect filter dst
--}
-
 -- | cowbell
 example3 :: String
 example3 =
@@ -102,3 +72,8 @@ example3 =
   "Oscillator osc1 { type square frequency 540 } [ gain1 ]  " <>
   "Oscillator osc2 { type square frequency 800 } [ gain1 ] " <>
   "End"
+
+
+example4 :: String
+example4 =
+  "AudioBufferSource id1 { url  wav/techno.wav } [ output ] End"

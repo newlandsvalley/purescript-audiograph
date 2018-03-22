@@ -1,10 +1,10 @@
 module Audio.Graph
  (NodeType(..), NodeDef(..),
-  AudioGraph,  Assemblage) where
+  AudioGraph,  Assemblage, AudioBuffers) where
 
 -- | Audio Graph data type
 
-import Audio.WebAudio.Types (AudioNode)
+import Audio.WebAudio.Types (AudioNode, AudioBuffer)
 import Audio.Graph.Attributes (AttributeMap)
 import Data.Map (Map)
 import Data.List (List)
@@ -12,9 +12,9 @@ import Data.Set (Set)
 
 
 -- | the type of Audio node.
--- | in the POC we only support these two
 data NodeType =
    OscillatorType
+ | AudioBufferSourceType
  | GainType
  | BiquadFilterType
 
@@ -31,3 +31,6 @@ type AudioGraph = List NodeDef
 
 -- | A run-time assemblage of nodes built from the graph
 type Assemblage = Map String AudioNode
+
+-- | the set of audio buffers identified by any AudioBuffrSourceNode
+type AudioBuffers = Map String AudioBuffer

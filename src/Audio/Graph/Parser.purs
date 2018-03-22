@@ -2,24 +2,24 @@ module Audio.Graph.Parser (parse) where
 
 -- | Parse a web-audio-graph DSL
 
+import Audio.Graph (AudioGraph, NodeType(..), NodeDef(..))
+import Audio.Graph.Attributes (AudioAttribute, AttributeMap, AudioParamDef(..),
+  oscillatorTypeAttr, numberAttr, stringAttr, audioParamsAttr, biquadFilterTypeAttr)
+import Audio.WebAudio.BiquadFilterNode (readBiquadFilterType)
+import Audio.WebAudio.Oscillator (readOscillatorType)
 import Control.Alt ((<|>))
 import Data.Either (Either(..))
+import Data.Int (toNumber)
 import Data.List (List(..), (:))
 import Data.List (singleton) as L
 import Data.Map (empty, fromFoldable)
 import Data.Set (Set, fromFoldable, insert, member, singleton) as Set
-import Data.Int (toNumber)
 import Data.Tuple (Tuple(..), fst)
-import Prelude (pure, show, ($), (*>), (<$), (<$>), (<*), (<*>), (<<<), (<>), (==), (>>=))
+import Prelude (pure, show, ($), (*>), (<$), (<$>), (<*), (<*>), (<<<), (<>), (=<<), (==), (>>=))
 import Text.Parsing.StringParser (Parser, fail, runParser)
 import Text.Parsing.StringParser.Combinators (choice, many, sepBy1, (<?>))
-import Text.Parsing.StringParser.String (string, regex, skipSpaces)
 import Text.Parsing.StringParser.Num (numberOrInt, unsignedInt)
-import Audio.Graph (AudioGraph, NodeType(..), NodeDef(..))
-import Audio.Graph.Attributes (AudioAttribute, AttributeMap, AudioParamDef(..),
-    oscillatorTypeAttr, numberAttr, audioParamsAttr, biquadFilterTypeAttr)
-import Audio.WebAudio.Oscillator (readOscillatorType)
-import Audio.WebAudio.BiquadFilterNode (readBiquadFilterType)
+import Text.Parsing.StringParser.String (string, regex, skipSpaces)
 
 
 type SymbolTable =
@@ -52,6 +52,7 @@ audioNode st =
   choice
     [
       oscillatorNode st
+    , audioBufferSourceNode st
     , gainNode st
     , biquadFilterNode st
     ]
@@ -60,6 +61,11 @@ audioNode st =
 oscillatorNode :: SymbolTable -> Parser (Tuple NodeDef SymbolTable)
 oscillatorNode st =
   buildNode <$> oscillatorNodeType <*> nodeId st <*> oscillatorAttributes <*> connections st
+
+audioBufferSourceNode :: SymbolTable -> Parser (Tuple NodeDef SymbolTable)
+audioBufferSourceNode st =
+  buildNode <$> audioBufferSourceNodeType <*> nodeId st <*> audioBufferSourceAttributes <*> connections st
+
 
 gainNode :: SymbolTable -> Parser (Tuple NodeDef SymbolTable)
 gainNode st =
@@ -73,6 +79,10 @@ biquadFilterNode st =
 oscillatorNodeType :: Parser NodeType
 oscillatorNodeType =
   OscillatorType <$ keyWord "Oscillator"
+
+audioBufferSourceNodeType :: Parser NodeType
+audioBufferSourceNodeType =
+  AudioBufferSourceType <$ keyWord "AudioBufferSource"
 
 gainNodeType :: Parser NodeType
 gainNodeType =
@@ -159,6 +169,25 @@ frequency :: Parser (Tuple String AudioAttribute)
 frequency =
   Tuple <$> keyWord "frequency" <*> audioParams
     <?> "frequency"
+
+audioBufferSourceAttributes:: Parser AttributeMap
+audioBufferSourceAttributes =
+  -- noAttributes
+  fromFoldable <$>
+    (openCurlyBracket *> audioBufferSourceAttributeList <* closeCurlyBracket)
+
+audioBufferSourceAttributeList :: Parser (List (Tuple String AudioAttribute))
+audioBufferSourceAttributeList =
+  many
+    (choice
+      [
+        urlAttribute
+      ]
+    )
+
+urlAttribute :: Parser (Tuple String AudioAttribute)
+urlAttribute =
+  Tuple <$> keyWord "url" <*> urlStringAttribute
 
 biquadFilterAttributes :: Parser AttributeMap
 biquadFilterAttributes =
@@ -282,6 +311,20 @@ number =
 intAttribute :: Parser AudioAttribute
 intAttribute =
   (numberAttr <<< toNumber) <$> unsignedInt <* skipSpaces
+
+
+--  -._~:/?#[]@!$&'()*+,;=`.
+-- .^$*+?()[{\|
+
+-- attempt a lax validation of URLS - just ban illegal characters
+urlStringAttribute :: Parser AudioAttribute
+urlStringAttribute =
+  let
+    pattern = "[A-Za-z0-9\\/\\.\\+\\?\\[\\]\\{\\/\\*\\+,;=`_~:@!&'#-]*"
+    --  pattern = "[A-Za-z0-9///./?/[/]/$/(/)/*/+,;=`_~:@!&'#-]*"
+  in
+    stringAttr <$> regex pattern <* skipSpaces
+      <?> "url string"
 
 -- symbol table operations
 

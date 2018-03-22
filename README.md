@@ -6,7 +6,7 @@ Highly experimental work in progress.  The idea is to build a very simple proof 
 Example
 -------
 
-Nodes are built in reverse order, starting with the destination and moving to the sound sources.  The reason for this is that the audiograph parser enforces a rule that a new node cannot connect to a node that has not yet been defined.  If this proves to be unrealistic (for example if we need feedback loops) then I will relax this condition later on.
+Nodes are built in reverse order, starting with the destination and moving to the sound sources.  The reason for this is that, currently, the audiograph parser enforces a rule that a new node cannot connect to a node that has not yet been defined.  This is unrealistic because  we need to be able to represent feedback loops and will eventually be changed.
 
 At the moment, only four nodes are supported - an implicit __destination__ (output), __oscillator__, __biquadFilter__ and __gain__.  For example:
 

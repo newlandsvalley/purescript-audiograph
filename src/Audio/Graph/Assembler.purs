@@ -37,6 +37,7 @@ assembleNode ctx ass (NodeDef nd) =
   trace ("assemblage size: " <> (show $ size ass)) \_ ->
   case nd.nodeType of
     OscillatorType -> assembleOscillator ctx ass (NodeDef nd)
+    AudioBufferSourceType -> assembleAudioBufferSource ctx ass (NodeDef nd)
     GainType-> assembleGain ctx ass (NodeDef nd)
     BiquadFilterType-> assembleBiquadFilter ctx ass (NodeDef nd)
 
@@ -74,6 +75,12 @@ assembleBiquadFilter ctx ass (NodeDef nd) =
     let
       ass' = insert nd.id (BiquadFilter biquadFilterNode) ass
     pure ass'
+
+assembleAudioBufferSource :: ∀ eff. AudioContext -> Assemblage -> NodeDef-> (Eff (wau :: WebAudio | eff) Assemblage)
+assembleAudioBufferSource ctx ass (NodeDef nd) =
+  trace ("assembling audio buffer source id: " <> nd.id) \_ ->
+  do
+    pure ass
 
 
 -- connections
