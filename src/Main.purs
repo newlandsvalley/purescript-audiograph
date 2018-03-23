@@ -3,7 +3,7 @@ module Main where
 import Prelude
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Console (CONSOLE, log)
-import Control.Monad.Aff (Aff, Fiber, delay, liftEff', launchAff)
+import Control.Monad.Aff (Aff, liftEff', launchAff)
 import Network.HTTP.Affjax (AJAX)
 import Data.Either (Either(..), either)
 import Data.Time.Duration (Milliseconds(..))
@@ -24,7 +24,7 @@ main = do
     delay (Milliseconds $ 4000.0)
     -}
     ctx <- makeAudioContext
-    _ <- launchAff $ play ctx 2.0 example4
+    _ <- launchAff $ play ctx 2.0 example3
     pure unit
 
 play :: forall e. AudioContext -> Number -> String
@@ -65,16 +65,11 @@ example3 =
 
 
 {-}
-  src <- createBufferSource ctx
-  _ <- setLoop true src
-  gain <- createGain ctx
-  dst <- destination ctx
-  _ <- connect src gain
-  _ <- connect gain dst
-  _ <- setBuffer buf src
-  startTime <- currentTime ctx
-  _ <- startBufferSource (startTime + 0.1) src
-  pure { source : src, gain : gain}
+  "Oscillator osc2 { type square frequency 800 } [ gain1 ] " <>
+  "Oscillator osc1 { type square frequency 540 } [ gain1 ]  " <>
+  "Gain gain1 { gain [ setValue 0.5, setValueAtTime 0.5 0, exponentialRampToValueAtTime 0.01 1.0 ] } [ filter1 ] " <>
+  "BiquadFilter filter1 { type bandpass frequency 800 } [ output ] " <>
+  "End"
 -}
 
 example4 :: String

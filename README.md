@@ -1,14 +1,14 @@
 purescript-audiograph
 =====================
 
-Highly experimental work in progress.  The idea is to build a very simple proof of concept to see whether it is realistic to provide a declarative interface into web-audio in purescript - something roughly along the lines of [visual-audio-graph](https://github.com/benji6/virtual-audio-graph).
+Highly experimental work in progress.  The idea is to build a simple proof of concept to see whether it is realistic to provide a declarative interface into web-audio in purescript - something roughly along the lines of [visual-audio-graph](https://github.com/benji6/virtual-audio-graph).
 
 Example
 -------
 
-Nodes are built in reverse order, starting with the destination and moving to the sound sources.  The reason for this is that, currently, the audiograph parser enforces a rule that a new node cannot connect to a node that has not yet been defined.  This is unrealistic because  we need to be able to represent feedback loops and will eventually be changed.
+Currently, nodes must be listed in reverse order, starting with the destination and moving to the sound sources.  This restriction will be relaxed very soon, allowing them to be listed in any order.
 
-At the moment, five nodes are supported - an implicit __destination__ (output), __oscillator__, __audioBufferSource__, __biquadFilter__ and __gain__.  For example - 
+The number of supported nodes is growing - five at the moment - an implicit __destination__ (output), __oscillator__, __audioBufferSource__, __biquadFilter__ and __gain__.  For example - 
 
 simple oscillator:
 

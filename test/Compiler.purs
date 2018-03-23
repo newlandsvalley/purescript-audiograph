@@ -48,8 +48,14 @@ basicSuite =
                      "Oscillator id2 {} [ id1 ] End")
     test "3 nodes" do
       assertCompiles ("Gain id1 { gain 2 } [ output ] " <>
-                     "BiquadFilter id2 { frequency 400 } [ id1 ] " <>
-                     "Oscillator id3 {} [ id2 ] End")
+                      "BiquadFilter id2 { frequency 400 } [ id1 ] " <>
+                      "Oscillator id3 {} [ id2 ]" <>
+                      "End")
+    test "3 nodes reverse order" do
+      assertCompiles ("Oscillator id3 {} [ id2 ]" <>
+                      "BiquadFilter id2 { frequency 400 } [ id1 ] " <>
+                      "Gain id1 { gain 2 } [ output ] " <>
+                      "End")
     test "1 gain audio param" do
       assertCompiles ("Gain id1 { gain [ setValue 2 ] } [ output ] End")
     test "2 gain audio params" do

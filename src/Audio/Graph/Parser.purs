@@ -1,4 +1,4 @@
-module Audio.Graph.Parser (parse) where
+module Audio.Graph.Parser (SymbolTable, parse) where
 
 -- | Parse a web-audio-graph DSL
 
@@ -21,10 +21,11 @@ import Text.Parsing.StringParser.Combinators (choice, many, sepBy1, (<?>))
 import Text.Parsing.StringParser.Num (numberOrInt, unsignedInt)
 import Text.Parsing.StringParser.String (string, regex, skipSpaces)
 
-
+-- | the symbol table currently just holds node ids
 type SymbolTable =
   { nodeNames :: Set.Set String
   }
+
 
 -- there is always one implied node named output
 initialSymbolTable :: SymbolTable
@@ -109,7 +110,7 @@ connectionList st =
 
 connection :: SymbolTable -> Parser String
 connection st =
-  identifier >>= (\id -> checkValidNodeRef st id)
+  identifier
 
 -- audio params
 
@@ -356,12 +357,14 @@ checkValidNodeId st nodeId =
       pure (Tuple nodeId {nodeNames} )
 
 -- check that a reference to a node already exists
+{- now done in semantic checker
 checkValidNodeRef :: SymbolTable -> String -> Parser String
 checkValidNodeRef st nodeId =
   if Set.member nodeId st.nodeNames then
     pure nodeId
   else
     fail ("identifier: " <> nodeId <> " has not been defined")
+-}
 
 -- builders
 
