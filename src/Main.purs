@@ -64,6 +64,21 @@ example3 =
   "End"
 
 
+{-}
+  src <- createBufferSource ctx
+  _ <- setLoop true src
+  gain <- createGain ctx
+  dst <- destination ctx
+  _ <- connect src gain
+  _ <- connect gain dst
+  _ <- setBuffer buf src
+  startTime <- currentTime ctx
+  _ <- startBufferSource (startTime + 0.1) src
+  pure { source : src, gain : gain}
+-}
+
 example4 :: String
 example4 =
-  "AudioBufferSource id1 { url  wav/techno.wav } [ output ] End"
+  "Gain id1 { gain 2 } [ output ]" <>
+  "AudioBufferSource id2 { url  wav/techno.wav loop true}  [ id1 ]" <>
+  "End"

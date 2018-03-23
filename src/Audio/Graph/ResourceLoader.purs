@@ -1,15 +1,16 @@
-module Audio.Graph.ResourceLoader (AudioBuffers, loadBuffers) where
+module Audio.Graph.ResourceLoader (loadBuffers) where
 
 -- | load and decode URL resources representing audio buffers
 
 import Audio.Graph (AudioGraph, NodeDef(..), NodeType(..))
+import Audio.Buffer (AudioBuffers)
 import Audio.Graph.Attributes (getString)
 import Audio.WebAudio.AudioContext (decodeAudioDataAsync)
 import Audio.WebAudio.Types (WebAudio, AudioContext, AudioBuffer)
 import Control.Monad.Aff (Aff)
 import Data.Either (Either(..), either)
 import Data.HTTP.Method (Method(..))
-import Data.Map (Map, fromFoldable)
+import Data.Map (fromFoldable)
 import Data.Maybe (Maybe(..))
 import Data.List (List(..), concat, singleton)
 import Data.Traversable (traverse, sequence)
@@ -18,9 +19,6 @@ import Network.HTTP.Affjax (AJAX, affjax, defaultRequest)
 import Network.HTTP.StatusCode (StatusCode(..))
 import Prelude (bind, pure, ($), (<$>), (<<<), (==), (<>))
 
-
--- | the set of audio buffers identified by any AudioBuffrSourceNode
-type AudioBuffers = Map String AudioBuffer
 
 -- | attempt to load the sound buffers for all nodes that identify them
 -- | (currently AudioBufferSourceNodes) and return an Error if any fail

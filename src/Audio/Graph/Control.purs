@@ -10,6 +10,7 @@ import Data.Foldable (traverse_)
 import Audio.Graph
 import Audio.WebAudio.Types (WebAudio, AudioNode(..))
 import Audio.WebAudio.Oscillator (startOscillator, stopOscillator)
+import Audio.WebAudio.AudioBufferSourceNode (startBufferSource, stopBufferSource)
 
 -- | start to play an Assemblage at the given time offset
 start :: ∀ eff. Number -> Assemblage -> Eff ( wau :: WebAudio | eff) Unit
@@ -33,6 +34,8 @@ startNode delay node =
   case node of
     Oscillator osc ->
       startOscillator delay osc
+    AudioBufferSource src ->
+      startBufferSource delay src
     _ ->
       pure unit
 
@@ -41,5 +44,7 @@ stopNode delay node =
   case node of
     Oscillator osc ->
       stopOscillator delay osc
+    AudioBufferSource src ->
+      stopBufferSource delay src
     _ ->
       pure unit
