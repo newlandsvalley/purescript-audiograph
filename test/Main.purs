@@ -9,7 +9,7 @@ import Control.Monad.Aff.AVar (AVAR)
 import Test.Unit (suite)
 import Test.Unit.Main (runTest)
 import Test.Unit.Console (TESTOUTPUT)
-import Test.Audio.Graph.Parser (parserSuite)
+import Test.Audio.Graph.Compiler (compilerSuite)
 
 main :: forall t.
         Eff
@@ -20,5 +20,5 @@ main :: forall t.
           )
           Unit
 main = runTest do
-  suite "parser" do
-    parserSuite
+  suite "compiler" do
+    compilerSuite

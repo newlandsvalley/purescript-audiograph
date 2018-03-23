@@ -11,7 +11,7 @@ import Data.Time.Duration (Milliseconds(..))
 
 import Audio.WebAudio.Types (WebAudio, AudioContext)
 import Audio.WebAudio.AudioContext (makeAudioContext)
-import Audio.Graph.Parser (parse)
+import Audio.Graph.Compiler (compile)
 import Audio.Graph.Control (startThenStop)
 import Audio.Graph.Builder (build)
 
@@ -32,7 +32,7 @@ play :: forall e. AudioContext -> Number -> String
 play ctx duration text =
   let
     audioGraph=
-      parse text
+      compile text
   in
     case audioGraph of
       Left err ->

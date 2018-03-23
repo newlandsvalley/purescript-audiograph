@@ -8,15 +8,15 @@ import Audio.Graph.Attributes (AudioAttribute, AttributeMap, AudioParamDef(..),
 import Audio.WebAudio.BiquadFilterNode (readBiquadFilterType)
 import Audio.WebAudio.Oscillator (readOscillatorType)
 import Control.Alt ((<|>))
-import Data.Either (Either(..))
+import Data.Either (Either)
 import Data.Int (toNumber)
 import Data.List (List(..), (:))
 import Data.List (singleton) as L
 import Data.Map (empty, fromFoldable)
 import Data.Set (Set, fromFoldable, insert, member, singleton) as Set
-import Data.Tuple (Tuple(..), fst)
-import Prelude (class BooleanAlgebra, pure, show, ($), (*>), (<$), (<$>), (<*), (<*>), (<<<), (<>), (=<<), (==), (>>=))
-import Text.Parsing.StringParser (Parser, fail, runParser)
+import Data.Tuple (Tuple(..))
+import Prelude (pure, (*>), (<$), (<$>), (<*), (<*>), (<<<), (<>), (==), (>>=))
+import Text.Parsing.StringParser (Parser, ParseError, fail, runParser)
 import Text.Parsing.StringParser.Combinators (choice, many, sepBy1, (<?>))
 import Text.Parsing.StringParser.Num (numberOrInt, unsignedInt)
 import Text.Parsing.StringParser.String (string, regex, skipSpaces)
@@ -374,11 +374,6 @@ buildNodeList (Tuple n _) (Tuple ns st) =
   Tuple (n : ns) st
 
 -- | Parse an audio graph
-parse :: String -> Either String AudioGraph
+parse :: String -> Either ParseError (Tuple AudioGraph SymbolTable)
 parse s =
-  case runParser (audioNodes initialSymbolTable) s of
-    Right n ->
-      Right (fst n)
-
-    Left e ->
-      Left $ show e
+  runParser (audioNodes initialSymbolTable) s
