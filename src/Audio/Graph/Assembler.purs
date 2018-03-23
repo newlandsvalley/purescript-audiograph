@@ -6,11 +6,11 @@ import Audio.Graph
 import Audio.Buffer (AudioBuffers)
 import Audio.Graph.Attributes (AttributeMap,
   setOscillatorTypeAttr, setOscillatorFrequencyAttr, setGainAttr, setBiquadFilterTypeAttr,
-  setBiquadFilterFrequencyAttr, setAudioBufferAttr)
+  setDelayAttr, setBiquadFilterFrequencyAttr, setAudioBufferAttr)
 import Audio.WebAudio.AudioContext (createBufferSource, createOscillator, createGain, createBiquadFilter,
-    destination)
+    createDelay, destination)
 import Audio.WebAudio.Types (WebAudio, AudioContext, AudioNode(..), OscillatorNode, GainNode,
-  BiquadFilterNode, AudioBufferSourceNode, connect)
+  BiquadFilterNode, AudioBufferSourceNode, DelayNode, connect)
 import Control.Monad.Eff (Eff)
 import Data.Foldable (traverse_, foldM)
 import Data.Map (insert, lookup, singleton, size)
@@ -43,6 +43,7 @@ assembleNode ctx buffers ass (NodeDef nd) =
     AudioBufferSourceType -> assembleAudioBufferSource ctx ass buffers (NodeDef nd)
     GainType-> assembleGain ctx ass (NodeDef nd)
     BiquadFilterType-> assembleBiquadFilter ctx ass (NodeDef nd)
+    DelayType-> assembleDelay ctx ass (NodeDef nd)
 
 -- nodes
 
@@ -51,7 +52,6 @@ assembleOscillator ctx ass (NodeDef nd) =
   trace ("assembling oscillator id: " <> nd.id) \_ ->
   do
     oscNode <- createOscillator ctx
-    _ <- setConnections (Oscillator oscNode) ass nd.connections
     _ <- setOscillatorAttributes oscNode nd.attributes
     let
       ass' = insert nd.id (Oscillator oscNode) ass
@@ -62,7 +62,6 @@ assembleGain ctx ass (NodeDef nd) =
   trace ("assembling gain id: " <> nd.id) \_ ->
   do
     gainNode <- createGain ctx
-    _ <- setConnections (Gain gainNode) ass nd.connections
     _ <- setGainAttributes gainNode nd.attributes
     let
       ass' = insert nd.id (Gain gainNode) ass
@@ -73,7 +72,6 @@ assembleBiquadFilter ctx ass (NodeDef nd) =
   trace ("assembling biquad filter id: " <> nd.id) \_ ->
   do
     biquadFilterNode <- createBiquadFilter ctx
-    _ <- setConnections (BiquadFilter biquadFilterNode) ass nd.connections
     _ <- setBiquadFilterAttributes biquadFilterNode nd.attributes
     let
       ass' = insert nd.id (BiquadFilter biquadFilterNode) ass
@@ -84,13 +82,20 @@ assembleAudioBufferSource ctx ass buffers (NodeDef nd) =
   trace ("assembling audio buffer source id: " <> nd.id) \_ ->
   do
     audioBufferSourceNode <- createBufferSource ctx
-    _ <- setConnections (AudioBufferSource audioBufferSourceNode) ass nd.connections
     _ <- setAudioBufferSourceAttributes audioBufferSourceNode nd.attributes buffers
     let
       ass' = insert nd.id (AudioBufferSource audioBufferSourceNode) ass
     pure ass'
 
-
+assembleDelay :: ∀ eff. AudioContext -> Assemblage -> NodeDef-> (Eff (wau :: WebAudio | eff) Assemblage)
+assembleDelay ctx ass (NodeDef nd) =
+  trace ("assembling delay id: " <> nd.id) \_ ->
+  do
+    delayNode <- createDelay ctx
+    -- _ <- setDelayAttributes delayNode nd.attributes
+    let
+      ass' = insert nd.id (Delay delayNode) ass
+    pure ass'
 -- connections
 
 -- assemble connections from the node defined in the NodeDef
@@ -150,6 +155,10 @@ setAudioBufferSourceAttributes node map buffers = do
 setGainAttributes :: ∀ eff. GainNode -> AttributeMap -> (Eff (wau :: WebAudio | eff) Unit)
 setGainAttributes gain map = do
   setGainAttr gain map
+
+setDelayAttributes :: ∀ eff. DelayNode -> AttributeMap -> (Eff (wau :: WebAudio | eff) Unit)
+setDelayAttributes delayNode map = do
+  setDelayAttr delayNode map
 
 setBiquadFilterAttributes :: ∀ eff. BiquadFilterNode -> AttributeMap -> (Eff (wau :: WebAudio | eff) Unit)
 setBiquadFilterAttributes bqf map = do

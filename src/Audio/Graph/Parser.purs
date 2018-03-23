@@ -56,6 +56,7 @@ audioNode st =
     , audioBufferSourceNode st
     , gainNode st
     , biquadFilterNode st
+    , delayNode st
     ]
       <?> "audio node"
 
@@ -85,6 +86,10 @@ audioBufferSourceNodeType :: Parser NodeType
 audioBufferSourceNodeType =
   AudioBufferSourceType <$ keyWord "AudioBufferSource"
 
+delayNode :: SymbolTable -> Parser (Tuple NodeDef SymbolTable)
+delayNode st =
+  buildNode <$> delayNodeType <*> nodeId st <*> delayAttributes <*> connections st
+
 gainNodeType :: Parser NodeType
 gainNodeType =
   GainType <$ keyWord "Gain"
@@ -92,6 +97,10 @@ gainNodeType =
 biquadFilterNodeType :: Parser NodeType
 biquadFilterNodeType =
   BiquadFilterType <$ keyWord "BiquadFilter"
+
+delayNodeType :: Parser NodeType
+delayNodeType =
+  GainType <$ keyWord "Delay"
 
 nodeId :: SymbolTable -> Parser (Tuple String SymbolTable)
 nodeId st =
@@ -229,6 +238,18 @@ biquadFilterType =
       , keyWord "allpass"
       ]
         <?> "biquad filter type"
+
+-- gain attributes
+
+-- at the moment we require a delayTime attribute, nothing more
+delayAttributes :: Parser AttributeMap
+delayAttributes =
+  (fromFoldable <<< L.singleton) <$>
+    (openCurlyBracket *> delayAttribute <* closeCurlyBracket)
+
+delayAttribute :: Parser (Tuple String AudioAttribute)
+delayAttribute =
+  Tuple <$> keyWord "delayTime" <*> audioParams
 
 -- general audio params
 

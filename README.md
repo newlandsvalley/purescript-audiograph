@@ -6,7 +6,7 @@ Highly experimental work in progress.  The idea is to build a simple proof of co
 Example
 -------
 
-Nodes may be listed in any order, ending with the key word _End_. The number of supported nodes is growing - five at the moment - an implicit __destination__ (output), __oscillator__, __audioBufferSource__, __biquadFilter__ and __gain__.  For example - 
+Nodes may be listed in any order, ending with the key word _End_. The number of supported nodes is growing - six at the moment - an implicit __destination__ (output), __Oscillator__, __AudioBufferSource__, __BiquadFilter__, __Delay__ and __Gain__.  For example - 
 
 simple oscillator:
 

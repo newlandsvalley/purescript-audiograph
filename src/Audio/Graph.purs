@@ -16,6 +16,7 @@ data NodeType =
  | AudioBufferSourceType
  | GainType
  | BiquadFilterType
+ | DelayType
 
 -- | An audio node definition
 data NodeDef = NodeDef

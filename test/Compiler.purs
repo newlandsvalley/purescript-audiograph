@@ -74,6 +74,8 @@ basicSuite =
       assertCompiles ("AudioBufferSource id1 { url  wav/techno.wav } [ output ] End")
     test "audio buffer source loop" do
       assertCompiles ("AudioBufferSource id1 { loop true } [ output ] End")
+    test "delay delayTime" do
+      assertCompiles ("Delay id1 { delayTime 2.0 } [ output ] End")
 
 
 badInputSuite :: forall t. Free (TestF t) Unit

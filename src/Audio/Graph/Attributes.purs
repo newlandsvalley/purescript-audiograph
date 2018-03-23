@@ -2,7 +2,7 @@ module Audio.Graph.Attributes
   (AudioAttribute, AttributeMap, AudioParamDef(..),
    addOscillatorType, addFrequency,
    getOscillatorType, getNumber, getString,
-   setOscillatorTypeAttr, setOscillatorFrequencyAttr, setGainAttr,
+   setOscillatorTypeAttr, setOscillatorFrequencyAttr, setGainAttr, setDelayAttr,
    oscillatorTypeAttr, numberAttr, stringAttr, boolAttr, audioParamsAttr,
    biquadFilterTypeAttr, setBiquadFilterTypeAttr, setBiquadFilterFrequencyAttr,
    setAudioBufferAttr
@@ -15,13 +15,14 @@ module Audio.Graph.Attributes
 import Prelude (Unit, ($), (<$>), (<$), (#), (>>=), id, bind, pure, unit)
 import Control.Monad.Eff (Eff)
 import Audio.WebAudio.Types (WebAudio, OscillatorNode, GainNode, BiquadFilterNode,
-  AudioBufferSourceNode, AudioParam, AudioBuffer)
+  AudioBufferSourceNode, DelayNode, AudioParam, AudioBuffer)
 import Audio.WebAudio.Oscillator (OscillatorType, frequency, setOscillatorType)
 import Audio.WebAudio.BiquadFilterNode (BiquadFilterType, setFilterType, filterFrequency)
 import Audio.WebAudio.GainNode (gain)
 import Audio.WebAudio.AudioParam (setValue, getValue, setValueAtTime,
   linearRampToValueAtTime, exponentialRampToValueAtTime, cancelScheduledValues)
 import Audio.WebAudio.AudioBufferSourceNode (setBuffer, setLoop)
+import Audio.WebAudio.DelayNode (delayTime)
 import Audio.Buffer (AudioBuffers)
 import Data.Map (Map, insert, lookup)
 import Data.Maybe (Maybe(..), fromMaybe)
@@ -213,6 +214,16 @@ setGainAttr gainNode map =
       do
         gainParam <- gain gainNode
         setParams gainParam ps
+
+setDelayAttr :: ∀ eff. DelayNode -> AttributeMap -> Eff ( wau :: WebAudio | eff) Unit
+setDelayAttr delayNode map =
+  case getAudioParams "delayTime" map of
+    Nil ->
+      pure unit
+    ps ->
+      do
+        delayParam <- delayTime delayNode
+        setParams delayParam ps
 
 setAudioBufferAttr :: ∀ eff. AudioBufferSourceNode -> AttributeMap -> AudioBuffers -> Eff ( wau :: WebAudio | eff) Unit
 setAudioBufferAttr audioBufferNode attMap buffers =

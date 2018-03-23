@@ -24,7 +24,7 @@ main = do
     delay (Milliseconds $ 4000.0)
     -}
     ctx <- makeAudioContext
-    _ <- launchAff $ play ctx 2.0 example4
+    _ <- launchAff $ play ctx 2.0 example3
     pure unit
 
 play :: forall e. AudioContext -> Number -> String
