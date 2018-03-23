@@ -8,7 +8,9 @@ Example
 
 Nodes are built in reverse order, starting with the destination and moving to the sound sources.  The reason for this is that, currently, the audiograph parser enforces a rule that a new node cannot connect to a node that has not yet been defined.  This is unrealistic because  we need to be able to represent feedback loops and will eventually be changed.
 
-At the moment, only four nodes are supported - an implicit __destination__ (output), __oscillator__, __biquadFilter__ and __gain__.  For example:
+At the moment, five nodes are supported - an implicit __destination__ (output), __oscillator__, __audioBufferSource__, __biquadFilter__ and __gain__.  For example - 
+
+simple oscillator:
 
 ```   
   Gain id1 { gain 2.0 } [ output ] 
@@ -16,7 +18,7 @@ At the moment, only four nodes are supported - an implicit __destination__ (outp
   End
 ```
 
-or a cowbell example:
+cowbell:
 
 ```
   BiquadFilter filter1 { type bandpass frequency 800 } [ output ]
@@ -26,7 +28,15 @@ or a cowbell example:
   End
 ```
 
-Each line defines a new Audio node in the graph starting with the node type and being immediately followed by its id.  The curly braces define attributes for the node which are either simple scalar values or else complex Audio Params (contained within square braces). The final square braces hold the connections from that node to any other node(s). An implicit Destination node, named output, is always present by default. 
+buffer source which loads its audio buffer from a URL:
+
+```
+  Gain id1 { gain 2 } [ output ]
+  AudioBufferSource id2 { url wav/techno.wav loop true}  [ id1 ]
+  End
+```
+
+Each line defines a new Audio node in the graph starting with the node type and id.  The curly braces define attributes for the node which are either simple scalar values or else complex Audio Params (contained within square braces). The final square braces hold the connections from that node to any other node(s). An implicit Destination node, named output, is always present by default. 
 
 Contributing
 ------------

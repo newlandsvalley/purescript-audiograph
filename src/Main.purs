@@ -80,5 +80,5 @@ example3 =
 example4 :: String
 example4 =
   "Gain id1 { gain 2 } [ output ]" <>
-  "AudioBufferSource id2 { url  wav/techno.wav loop true}  [ id1 ]" <>
+  "AudioBufferSource id2 { url wav/techno.wav loop true}  [ id1 ]" <>
   "End"

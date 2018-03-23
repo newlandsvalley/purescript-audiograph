@@ -30,6 +30,7 @@ import Data.Symbol (SProxy(..))
 import Data.Foldable (traverse_)
 import Data.Variant (Variant, inj, on, default)
 
+import Debug.Trace (trace)
 
 -- | the (type of) an attribute of an audio node
 type AudioAttribute = Variant ( oscillatorType :: OscillatorType
@@ -221,8 +222,10 @@ setAudioBufferAttr audioBufferNode attMap buffers =
   in
     case maybeBuffer of
       Nothing ->
+        trace "buffer not loaded" \_ ->
         pure unit
       Just buffer ->
+        trace "buffer loaded" \_ ->
         setBuffer buffer audioBufferNode
 
 setAudioBufferLoopAttr :: ∀ eff. AudioBufferSourceNode-> AttributeMap -> Eff ( wau :: WebAudio | eff) Unit
@@ -232,7 +235,6 @@ setAudioBufferLoopAttr node map =
       setLoop b node
     _ ->
       pure unit
-
 
 -- | set a list of audio parameters
 setParams :: ∀ eff. AudioParam -> List AudioParamDef -> Eff ( wau :: WebAudio | eff) Unit

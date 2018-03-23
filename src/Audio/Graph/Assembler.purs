@@ -84,7 +84,9 @@ assembleAudioBufferSource ctx ass buffers (NodeDef nd) =
     audioBufferSourceNode <- createBufferSource ctx
     _ <- setConnections (AudioBufferSource audioBufferSourceNode) ass nd.connections
     _ <- setAudioBufferSourceAttributes audioBufferSourceNode nd.attributes buffers
-    pure ass
+    let
+      ass' = insert nd.id (AudioBufferSource audioBufferSourceNode) ass
+    pure ass'
 
 
 -- connections
