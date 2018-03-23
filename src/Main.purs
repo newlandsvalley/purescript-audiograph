@@ -24,7 +24,7 @@ main = do
     delay (Milliseconds $ 4000.0)
     -}
     ctx <- makeAudioContext
-    _ <- launchAff $ play ctx 2.0 example3
+    _ <- launchAff $ play ctx 3.0 example5
     pure unit
 
 play :: forall e. AudioContext -> Number -> String
@@ -63,8 +63,17 @@ example3 =
   "BiquadFilter filter1 { type bandpass frequency 800 } [ output ] " <>
   "End"
 
+-- | audio buffer source
 example4 :: String
 example4 =
   "Gain id1 { gain 2 } [ output ]" <>
   "AudioBufferSource id2 { url wav/techno.wav loop true}  [ id1 ]" <>
+  "End"
+
+-- | feedback
+example5 :: String
+example5 =
+  "AudioBufferSource abs { url ogg/chop.ogg loop true}  [ delay, output ]" <>
+  "Delay delay { delayTime 0.5 } [ feedback, output ] " <>
+  "Gain feedback { gain 0.8 } [ delay ]" <>
   "End"

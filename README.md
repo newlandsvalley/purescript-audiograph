@@ -1,7 +1,7 @@
 purescript-audiograph
 =====================
 
-Highly experimental work in progress.  The idea is to build a simple proof of concept to see whether it is realistic to provide a declarative interface into web-audio in purescript - something roughly along the lines of [visual-audio-graph](https://github.com/benji6/virtual-audio-graph).
+The idea is to build a simple proof of concept to provide a declarative interface into web-audio in purescript - something roughly along the lines of [visual-audio-graph](https://github.com/benji6/virtual-audio-graph).
 
 Example
 -------
@@ -34,7 +34,26 @@ buffer source which loads its audio buffer from a URL:
   End
 ```
 
+feedback:
+
+```
+  AudioBufferSource abs { url ogg/chop.ogg loop true}  [ delay, output ]
+  Delay delay { delayTime 0.5 } [ feedback, output ]
+  Gain feedback { gain 0.8 } [ delay ]
+  End
+```
+
 Each line defines a new Audio node in the graph starting with the node type and id.  The curly braces define attributes for the node which are either simple scalar values or else complex Audio Params (contained within square braces). The final square braces hold the connections from that node to any other node(s). An implicit Destination node, named output, is always present by default. 
+
+Building
+--------
+
+from the current directory:
+
+    $ bower install
+    $ ./build.sh
+
+Then host dist/index.html on your web server of choice.
 
 Contributing
 ------------
