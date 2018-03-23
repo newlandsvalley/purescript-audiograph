@@ -6,9 +6,7 @@ Highly experimental work in progress.  The idea is to build a simple proof of co
 Example
 -------
 
-Currently, nodes must be listed in reverse order, starting with the destination and moving to the sound sources.  This restriction will be relaxed very soon, allowing them to be listed in any order.
-
-The number of supported nodes is growing - five at the moment - an implicit __destination__ (output), __oscillator__, __audioBufferSource__, __biquadFilter__ and __gain__.  For example - 
+Nodes may be listed in any order, ending with the key word _End_. The number of supported nodes is growing - five at the moment - an implicit __destination__ (output), __oscillator__, __audioBufferSource__, __biquadFilter__ and __gain__.  For example - 
 
 simple oscillator:
 
@@ -21,18 +19,18 @@ simple oscillator:
 cowbell:
 
 ```
-  BiquadFilter filter1 { type bandpass frequency 800 } [ output ]
-  Gain gain1 { gain [ setValue 0.5, setValueAtTime 0.5 0, exponentialRampToValueAtTime 0.01 1.0 ] } [ filter1 ] 
-  Oscillator osc1 { type square frequency 540 } [ gain1 ] 
   Oscillator osc2 { type square frequency 800 } [ gain1 ]
+  Oscillator osc1 { type square frequency 540 } [ gain1 ] 
+  Gain gain1 { gain [ setValue 0.5, setValueAtTime 0.5 0, exponentialRampToValueAtTime 0.01 1.0 ] } [ filter1 ] 
+  BiquadFilter filter1 { type bandpass frequency 800 } [ output ]
   End
 ```
 
 buffer source which loads its audio buffer from a URL:
 
 ```
-  Gain id1 { gain 2 } [ output ]
   AudioBufferSource id2 { url wav/techno.wav loop true}  [ id1 ]
+  Gain id1 { gain 2 } [ output ]
   End
 ```
 

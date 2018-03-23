@@ -24,7 +24,7 @@ main = do
     delay (Milliseconds $ 4000.0)
     -}
     ctx <- makeAudioContext
-    _ <- launchAff $ play ctx 2.0 example3
+    _ <- launchAff $ play ctx 2.0 example4
     pure unit
 
 play :: forall e. AudioContext -> Number -> String
@@ -57,20 +57,11 @@ example2 =
 -- | cowbell
 example3 :: String
 example3 =
-  "BiquadFilter filter1 { type bandpass frequency 800 } [ output ] " <>
-  "Gain gain1 { gain [ setValue 0.5, setValueAtTime 0.5 0, exponentialRampToValueAtTime 0.01 1.0 ] } [ filter1 ] " <>
-  "Oscillator osc1 { type square frequency 540 } [ gain1 ]  " <>
-  "Oscillator osc2 { type square frequency 800 } [ gain1 ] " <>
-  "End"
-
-
-{-}
   "Oscillator osc2 { type square frequency 800 } [ gain1 ] " <>
   "Oscillator osc1 { type square frequency 540 } [ gain1 ]  " <>
   "Gain gain1 { gain [ setValue 0.5, setValueAtTime 0.5 0, exponentialRampToValueAtTime 0.01 1.0 ] } [ filter1 ] " <>
   "BiquadFilter filter1 { type bandpass frequency 800 } [ output ] " <>
   "End"
--}
 
 example4 :: String
 example4 =

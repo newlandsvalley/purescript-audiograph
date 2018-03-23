@@ -7,9 +7,8 @@ import Audio.Buffer (AudioBuffers)
 import Audio.Graph.Attributes (AttributeMap,
   setOscillatorTypeAttr, setOscillatorFrequencyAttr, setGainAttr, setBiquadFilterTypeAttr,
   setBiquadFilterFrequencyAttr, setAudioBufferAttr)
-
 import Audio.WebAudio.AudioContext (createBufferSource, createOscillator, createGain, createBiquadFilter,
-    decodeAudioData, destination)
+    destination)
 import Audio.WebAudio.Types (WebAudio, AudioContext, AudioNode(..), OscillatorNode, GainNode,
   BiquadFilterNode, AudioBufferSourceNode, connect)
 import Control.Monad.Eff (Eff)
@@ -21,6 +20,7 @@ import Prelude (Unit, bind, pure, show, unit, (<>), ($))
 
 import Debug.Trace (trace)
 
+-- | assemble the web-audio graph as a playable assemblage
 assemble :: ∀ eff. AudioContext -> AudioBuffers -> AudioGraph -> (Eff (wau :: WebAudio | eff) Assemblage)
 assemble ctx buffers graph =
   trace "assembling graph" \_ ->
@@ -31,6 +31,8 @@ assemble ctx buffers graph =
       ass = singleton "output" (Destination destNode)
       --  foldM :: forall f m a b. Foldable f => Monad m => (a -> b -> m a) -> a -> f b -> m a
     ass' <- foldM (assembleNode ctx buffers) ass graph
+    -- assemble the connections after the node assemblage has been built
+    _ <- traverse_ (assembleConnections ass') graph
     pure ass'
 
 assembleNode :: ∀ eff. AudioContext -> AudioBuffers -> Assemblage -> NodeDef-> (Eff (wau :: WebAudio | eff) Assemblage)
@@ -91,10 +93,25 @@ assembleAudioBufferSource ctx ass buffers (NodeDef nd) =
 
 -- connections
 
+-- assemble connections from the node defined in the NodeDef
+assembleConnections :: ∀ eff. Assemblage -> NodeDef-> (Eff (wau :: WebAudio | eff) Unit)
+assembleConnections ass (NodeDef nd) =
+  trace ("assembling connections for node: " <> nd.id) \_ ->
+  let
+    maybeAudioNode = lookup nd.id ass
+  in
+    case maybeAudioNode of
+      Just node ->
+        setConnections node ass nd.connections
+      Nothing -> -- can't happen - maybe use Partial
+        pure unit
+
+-- set all the connections from one node
 setConnections :: ∀ eff. AudioNode -> Assemblage -> Set String -> (Eff (wau :: WebAudio | eff) Unit)
 setConnections sourceNode ass targets =
   traverse_ (setConnection sourceNode ass) targets
 
+-- set one connection from a node
 setConnection :: ∀ eff. AudioNode -> Assemblage -> String  -> (Eff (wau :: WebAudio | eff) Unit)
 setConnection sourceNode ass target =
   trace ("connecting to target: " <> target) \_ ->
