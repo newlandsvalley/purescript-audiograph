@@ -3,14 +3,15 @@ module Audio.Graph.Assembler (assemble) where
 -- | Assemble an Audio Graph definition into a working assemblage of audio nodes
 
 import Audio.Graph
+import Audio.Buffer (AudioBuffers)
 import Audio.Graph.Attributes (AttributeMap,
   setOscillatorTypeAttr, setOscillatorFrequencyAttr, setGainAttr, setBiquadFilterTypeAttr,
-  setBiquadFilterFrequencyAttr)
+  setBiquadFilterFrequencyAttr, setAudioBufferAttr)
 
 import Audio.WebAudio.AudioContext (createBufferSource, createOscillator, createGain, createBiquadFilter,
     decodeAudioData, destination)
 import Audio.WebAudio.Types (WebAudio, AudioContext, AudioNode(..), OscillatorNode, GainNode,
-  BiquadFilterNode, connect)
+  BiquadFilterNode, AudioBufferSourceNode, connect)
 import Control.Monad.Eff (Eff)
 import Data.Foldable (traverse_, foldM)
 import Data.Map (insert, lookup, singleton, size)
@@ -20,8 +21,8 @@ import Prelude (Unit, bind, pure, show, unit, (<>), ($))
 
 import Debug.Trace (trace)
 
-assemble :: ∀ eff. AudioContext -> AudioGraph -> (Eff (wau :: WebAudio | eff) Assemblage)
-assemble ctx graph =
+assemble :: ∀ eff. AudioContext -> AudioBuffers -> AudioGraph -> (Eff (wau :: WebAudio | eff) Assemblage)
+assemble ctx buffers graph =
   trace "assembling graph" \_ ->
   do
     destNode <- destination ctx
@@ -29,15 +30,15 @@ assemble ctx graph =
     let
       ass = singleton "output" (Destination destNode)
       --  foldM :: forall f m a b. Foldable f => Monad m => (a -> b -> m a) -> a -> f b -> m a
-    ass' <- foldM (assembleNode ctx) ass graph
+    ass' <- foldM (assembleNode ctx buffers) ass graph
     pure ass'
 
-assembleNode :: ∀ eff. AudioContext -> Assemblage -> NodeDef-> (Eff (wau :: WebAudio | eff) Assemblage)
-assembleNode ctx ass (NodeDef nd) =
+assembleNode :: ∀ eff. AudioContext -> AudioBuffers -> Assemblage -> NodeDef-> (Eff (wau :: WebAudio | eff) Assemblage)
+assembleNode ctx buffers ass (NodeDef nd) =
   trace ("assemblage size: " <> (show $ size ass)) \_ ->
   case nd.nodeType of
     OscillatorType -> assembleOscillator ctx ass (NodeDef nd)
-    AudioBufferSourceType -> assembleAudioBufferSource ctx ass (NodeDef nd)
+    AudioBufferSourceType -> assembleAudioBufferSource ctx ass buffers (NodeDef nd)
     GainType-> assembleGain ctx ass (NodeDef nd)
     BiquadFilterType-> assembleBiquadFilter ctx ass (NodeDef nd)
 
@@ -76,10 +77,13 @@ assembleBiquadFilter ctx ass (NodeDef nd) =
       ass' = insert nd.id (BiquadFilter biquadFilterNode) ass
     pure ass'
 
-assembleAudioBufferSource :: ∀ eff. AudioContext -> Assemblage -> NodeDef-> (Eff (wau :: WebAudio | eff) Assemblage)
-assembleAudioBufferSource ctx ass (NodeDef nd) =
+assembleAudioBufferSource :: ∀ eff. AudioContext -> Assemblage -> AudioBuffers -> NodeDef-> (Eff (wau :: WebAudio | eff) Assemblage)
+assembleAudioBufferSource ctx ass buffers (NodeDef nd) =
   trace ("assembling audio buffer source id: " <> nd.id) \_ ->
   do
+    audioBufferSourceNode <- createBufferSource ctx
+    _ <- setConnections (AudioBufferSource audioBufferSourceNode) ass nd.connections
+    _ <- setAudioBufferSourceAttributes audioBufferSourceNode nd.attributes buffers
     pure ass
 
 
@@ -119,6 +123,10 @@ setOscillatorAttributes :: ∀ eff. OscillatorNode -> AttributeMap -> (Eff (wau 
 setOscillatorAttributes osc map = do
   _ <- setOscillatorTypeAttr osc map
   setOscillatorFrequencyAttr osc map
+
+setAudioBufferSourceAttributes :: ∀ eff. AudioBufferSourceNode -> AttributeMap -> AudioBuffers -> (Eff (wau :: WebAudio | eff) Unit)
+setAudioBufferSourceAttributes node map buffers = do
+  setAudioBufferAttr node map buffers
 
 setGainAttributes :: ∀ eff. GainNode -> AttributeMap -> (Eff (wau :: WebAudio | eff) Unit)
 setGainAttributes gain map = do

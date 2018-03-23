@@ -4,7 +4,7 @@ module Audio.Graph.Parser (parse) where
 
 import Audio.Graph (AudioGraph, NodeType(..), NodeDef(..))
 import Audio.Graph.Attributes (AudioAttribute, AttributeMap, AudioParamDef(..),
-  oscillatorTypeAttr, numberAttr, stringAttr, audioParamsAttr, biquadFilterTypeAttr)
+  oscillatorTypeAttr, numberAttr, stringAttr, boolAttr, audioParamsAttr, biquadFilterTypeAttr)
 import Audio.WebAudio.BiquadFilterNode (readBiquadFilterType)
 import Audio.WebAudio.Oscillator (readOscillatorType)
 import Control.Alt ((<|>))
@@ -15,7 +15,7 @@ import Data.List (singleton) as L
 import Data.Map (empty, fromFoldable)
 import Data.Set (Set, fromFoldable, insert, member, singleton) as Set
 import Data.Tuple (Tuple(..), fst)
-import Prelude (pure, show, ($), (*>), (<$), (<$>), (<*), (<*>), (<<<), (<>), (=<<), (==), (>>=))
+import Prelude (class BooleanAlgebra, pure, show, ($), (*>), (<$), (<$>), (<*), (<*>), (<<<), (<>), (=<<), (==), (>>=))
 import Text.Parsing.StringParser (Parser, fail, runParser)
 import Text.Parsing.StringParser.Combinators (choice, many, sepBy1, (<?>))
 import Text.Parsing.StringParser.Num (numberOrInt, unsignedInt)
@@ -182,12 +182,17 @@ audioBufferSourceAttributeList =
     (choice
       [
         urlAttribute
+      , loopAttribute
       ]
     )
 
 urlAttribute :: Parser (Tuple String AudioAttribute)
 urlAttribute =
   Tuple <$> keyWord "url" <*> urlStringAttribute
+
+loopAttribute :: Parser (Tuple String AudioAttribute)
+loopAttribute =
+  Tuple <$> keyWord "loop" <*> boolAttribute
 
 biquadFilterAttributes :: Parser AttributeMap
 biquadFilterAttributes =
@@ -312,9 +317,17 @@ intAttribute :: Parser AudioAttribute
 intAttribute =
   (numberAttr <<< toNumber) <$> unsignedInt <* skipSpaces
 
+boolAttribute :: Parser AudioAttribute
+boolAttribute =
+  boolAttr <$> (isTrue <|> isFalse)
 
---  -._~:/?#[]@!$&'()*+,;=`.
--- .^$*+?()[{\|
+isTrue :: Parser Boolean
+isTrue =
+  pure true <* string "true" <* skipSpaces
+
+isFalse :: Parser Boolean
+isFalse =
+  pure false <* string "false" <* skipSpaces
 
 -- attempt a lax validation of URLS - just ban illegal characters
 urlStringAttribute :: Parser AudioAttribute

@@ -1,15 +1,14 @@
 module Audio.Graph
  (NodeType(..), NodeDef(..),
-  AudioGraph,  Assemblage, AudioBuffers) where
+  AudioGraph,  Assemblage) where
 
 -- | Audio Graph data type
 
-import Audio.WebAudio.Types (AudioNode, AudioBuffer)
+import Audio.WebAudio.Types (AudioNode)
 import Audio.Graph.Attributes (AttributeMap)
 import Data.Map (Map)
 import Data.List (List)
 import Data.Set (Set)
-
 
 -- | the type of Audio node.
 data NodeType =
@@ -31,6 +30,3 @@ type AudioGraph = List NodeDef
 
 -- | A run-time assemblage of nodes built from the graph
 type Assemblage = Map String AudioNode
-
--- | the set of audio buffers identified by any AudioBuffrSourceNode
-type AudioBuffers = Map String AudioBuffer

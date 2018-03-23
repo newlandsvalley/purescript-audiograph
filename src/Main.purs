@@ -12,10 +12,8 @@ import Data.Time.Duration (Milliseconds(..))
 import Audio.WebAudio.Types (WebAudio, AudioContext)
 import Audio.WebAudio.AudioContext (makeAudioContext)
 import Audio.Graph.Parser (parse)
-import Audio.Graph.ResourceLoader (loadBuffers)
-import Audio.Graph.Assembler (assemble)
-import Audio.Graph.Control (start, stop)
-import Audio.Graph (Assemblage)
+import Audio.Graph.Control (startThenStop)
+import Audio.Graph.Builder (build)
 
 
 main :: forall e. Eff (ajax :: AJAX, console :: CONSOLE, wau :: WebAudio | e) Unit
@@ -41,16 +39,8 @@ play ctx duration text =
         liftEff' $ log ("parse error: " <> err)
       Right graph ->
         do
-          assemblage <- liftEff' $ assemble ctx graph
-          audioBuffers <- loadBuffers ctx graph
-          liftEff' $ either (\err -> log ("load error: " <> err)) (\_ -> startThenStop duration assemblage) audioBuffers
-
-startThenStop :: forall e. Number -> Assemblage
-     -> Eff (console :: CONSOLE, wau :: WebAudio | e) Unit
-startThenStop duration assemblage = do
-  _ <- start 0.0 assemblage
-  stop duration assemblage
-
+          assemblage <- build ctx graph
+          liftEff' $ either (\err -> log ("load error: " <> err)) (startThenStop 0.0 duration) assemblage
 
 example1 :: String
 example1 =

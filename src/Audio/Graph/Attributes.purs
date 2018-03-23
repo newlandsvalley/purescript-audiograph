@@ -3,8 +3,9 @@ module Audio.Graph.Attributes
    addOscillatorType, addFrequency,
    getOscillatorType, getNumber, getString,
    setOscillatorTypeAttr, setOscillatorFrequencyAttr, setGainAttr,
-   oscillatorTypeAttr, numberAttr, stringAttr, audioParamsAttr,
-   biquadFilterTypeAttr, setBiquadFilterTypeAttr, setBiquadFilterFrequencyAttr
+   oscillatorTypeAttr, numberAttr, stringAttr, boolAttr, audioParamsAttr,
+   biquadFilterTypeAttr, setBiquadFilterTypeAttr, setBiquadFilterFrequencyAttr,
+   setAudioBufferAttr
    ) where
 
 -- | Audio node attributes.  These are either simple or consist of
@@ -13,12 +14,15 @@ module Audio.Graph.Attributes
 
 import Prelude (Unit, ($), (<$>), (<$), (#), (>>=), id, bind, pure, unit)
 import Control.Monad.Eff (Eff)
-import Audio.WebAudio.Types (WebAudio, OscillatorNode, GainNode, BiquadFilterNode, AudioParam)
-import Audio.WebAudio.Oscillator (OscillatorType, frequency, setFrequency, setOscillatorType)
+import Audio.WebAudio.Types (WebAudio, OscillatorNode, GainNode, BiquadFilterNode,
+  AudioBufferSourceNode, AudioParam, AudioBuffer)
+import Audio.WebAudio.Oscillator (OscillatorType, frequency, setOscillatorType)
 import Audio.WebAudio.BiquadFilterNode (BiquadFilterType, setFilterType, filterFrequency)
 import Audio.WebAudio.GainNode (gain)
 import Audio.WebAudio.AudioParam (setValue, getValue, setValueAtTime,
   linearRampToValueAtTime, exponentialRampToValueAtTime, cancelScheduledValues)
+import Audio.WebAudio.AudioBufferSourceNode (setBuffer, setLoop)
+import Audio.Buffer (AudioBuffers)
 import Data.Map (Map, insert, lookup)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.List (List(..))
@@ -32,6 +36,7 @@ type AudioAttribute = Variant ( oscillatorType :: OscillatorType
                               , biquadFilterType :: BiquadFilterType
                               , number :: Number
                               , string :: String
+                              , bool :: Boolean
                               , audioParams :: List AudioParamDef)
 
 -- | a map of a set of such (named) attributes
@@ -50,6 +55,7 @@ _oscillatorType = SProxy :: SProxy "oscillatorType"
 _biquadFilterType = SProxy :: SProxy "biquadFilterType"
 _number = SProxy :: SProxy "number"
 _string = SProxy :: SProxy "string"
+_bool = SProxy :: SProxy "bool"
 _audioParams = SProxy :: SProxy "audioParams"
 
 -- variant builders
@@ -68,6 +74,10 @@ numberAttr t =
 stringAttr :: String -> AudioAttribute
 stringAttr t =
   inj _string t
+
+boolAttr :: Boolean -> AudioAttribute
+boolAttr t =
+  inj _bool t
 
 audioParamsAttr :: List AudioParamDef -> AudioAttribute
 audioParamsAttr t =
@@ -101,6 +111,11 @@ getVString :: AudioAttribute -> Maybe String
 getVString =
     default Nothing
       # on _string Just
+
+getVBool :: AudioAttribute -> Maybe Boolean
+getVBool =
+    default Nothing
+      # on _bool Just
 
 getVAudioParams :: AudioAttribute -> List AudioParamDef
 getVAudioParams  =
@@ -136,6 +151,11 @@ getNumber attName map =
 getString :: String -> AttributeMap -> Maybe String
 getString attName map =
   (lookup attName map) >>= getVString
+
+-- | get a named Boolean attribute
+getBool :: String -> AttributeMap -> Maybe Boolean
+getBool attName map =
+  (lookup attName map) >>= getVBool
 
 -- | get a named audio Params attribute
 getAudioParams :: String -> AttributeMap -> List AudioParamDef
@@ -192,6 +212,27 @@ setGainAttr gainNode map =
       do
         gainParam <- gain gainNode
         setParams gainParam ps
+
+setAudioBufferAttr :: ∀ eff. AudioBufferSourceNode -> AttributeMap -> AudioBuffers -> Eff ( wau :: WebAudio | eff) Unit
+setAudioBufferAttr audioBufferNode attMap buffers =
+  let
+    maybeBuffer :: Maybe AudioBuffer
+    maybeBuffer = (getString "url" attMap) >>= (\url -> lookup url buffers)
+  in
+    case maybeBuffer of
+      Nothing ->
+        pure unit
+      Just buffer ->
+        setBuffer buffer audioBufferNode
+
+setAudioBufferLoopAttr :: ∀ eff. AudioBufferSourceNode-> AttributeMap -> Eff ( wau :: WebAudio | eff) Unit
+setAudioBufferLoopAttr node map =
+  case getBool "loop" map of
+    Just b ->
+      setLoop b node
+    _ ->
+      pure unit
+
 
 -- | set a list of audio parameters
 setParams :: ∀ eff. AudioParam -> List AudioParamDef -> Eff ( wau :: WebAudio | eff) Unit

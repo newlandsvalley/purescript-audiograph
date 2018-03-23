@@ -67,6 +67,8 @@ basicSuite =
       assertParses ("BiquadFilter id1 { frequency 80 } [ output ] End")
     test "audio buffer source url" do
       assertParses ("AudioBufferSource id1 { url  wav/techno.wav } [ output ] End")
+    test "audio buffer source loop" do
+      assertParses ("AudioBufferSource id1 { loop true } [ output ] End")
 
 
 
