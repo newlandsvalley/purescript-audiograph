@@ -14,7 +14,7 @@ import Prelude (($), (<>), show)
 type ErrorSet = Set String
 
 
--- | A compiler which perfoms both parsing and semantic checks
+-- | A compiler which performs both parsing and semantic checks
 compile :: String -> Either String AudioGraph
 compile s =
   case parse s of

@@ -35,9 +35,7 @@ loadBuffers :: ∀ eff.
       (Either String AudioBuffers)
 loadBuffers ctx graph = do
   ebuffs <- (sequence <<< concat) <$> traverse (loadNodeBuffer ctx) graph
-  let
-    bufferMap = either Left (Right <<< fromFoldable) ebuffs
-  pure bufferMap
+  pure $ either Left (Right <<< fromFoldable) ebuffs
 
 -- | nodes with resources that are attempted to be loaded are returned
 -- | as a singletom List (either success or failure)

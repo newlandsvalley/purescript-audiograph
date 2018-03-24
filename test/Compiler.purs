@@ -64,16 +64,16 @@ basicSuite =
       assertCompiles ("Gain id1 { gain [ setValue 1, setValueAtTime 3 2, linearRampToValueAtTime 6 4 ] } [ output ] End")
     test "oscillator type" do
       assertCompiles ("Oscillator id1 { type square } [ output ] End")
-    test "oscillator frequency" do
-      assertCompiles ("Oscillator id1 { frequency 440 } [ output ] End")
+    test "oscillator 2 attributes" do
+      assertCompiles ("Oscillator id1 { type triangle, frequency 440 } [ output ] End")
     test "biquad filter type" do
       assertCompiles ("BiquadFilter id1 { type lowpass } [ output ] End")
     test "biquad filter frequency" do
       assertCompiles ("BiquadFilter id1 { frequency 80 } [ output ] End")
     test "audio buffer source url" do
       assertCompiles ("AudioBufferSource id1 { url  wav/techno.wav } [ output ] End")
-    test "audio buffer source loop" do
-      assertCompiles ("AudioBufferSource id1 { loop true } [ output ] End")
+    test "audio buffer 2 attributes" do
+      assertCompiles ("AudioBufferSource id1 { url  wav/techno.wav, loop true } [ output ] End")
     test "delay delayTime" do
       assertCompiles ("Delay id1 { delayTime 2.0 } [ output ] End")
 

@@ -24,7 +24,7 @@ main = do
     delay (Milliseconds $ 4000.0)
     -}
     ctx <- makeAudioContext
-    _ <- launchAff $ play ctx 3.0 example5
+    _ <- launchAff $ play ctx 3.0 example1
     pure unit
 
 play :: forall e. AudioContext -> Number -> String
@@ -45,35 +45,35 @@ play ctx duration text =
 example1 :: String
 example1 =
   "Gain id1 { gain 2 } [ output ] " <>
-  "Oscillator id2 { type square frequency 440 } [ id1 ] " <>
+  "Oscillator id2 { type square, frequency 440 } [ id1 ] " <>
   "End"
 
 example2 :: String
 example2 =
   "Gain id1 { gain [ setValue 0.1, exponentialRampToValueAtTime 2 2.0 ] } [ output ] " <>
-  "Oscillator id2 { type sawtooth frequency 240 } [ id1 ] " <>
+  "Oscillator id2 { type sawtooth, frequency 240 } [ id1 ] " <>
   "End"
 
 -- | cowbell
 example3 :: String
 example3 =
-  "Oscillator osc2 { type square frequency 800 } [ gain1 ] " <>
-  "Oscillator osc1 { type square frequency 540 } [ gain1 ]  " <>
+  "Oscillator osc2 { type square, frequency 800 } [ gain1 ] " <>
+  "Oscillator osc1 { type square, frequency 540 } [ gain1 ]  " <>
   "Gain gain1 { gain [ setValue 0.5, setValueAtTime 0.5 0, exponentialRampToValueAtTime 0.01 1.0 ] } [ filter1 ] " <>
-  "BiquadFilter filter1 { type bandpass frequency 800 } [ output ] " <>
+  "BiquadFilter filter1 { type bandpass, frequency 800 } [ output ] " <>
   "End"
 
 -- | audio buffer source
 example4 :: String
 example4 =
   "Gain id1 { gain 2 } [ output ]" <>
-  "AudioBufferSource id2 { url wav/techno.wav loop true}  [ id1 ]" <>
+  "AudioBufferSource id2 { url wav/techno.wav, loop true}  [ id1 ]" <>
   "End"
 
 -- | feedback
 example5 :: String
 example5 =
-  "AudioBufferSource abs { url ogg/chop.ogg loop true}  [ delay, output ]" <>
+  "AudioBufferSource abs { url ogg/chop.ogg, loop true}  [ delay, output ]" <>
   "Delay delay { delayTime 0.5 } [ feedback, output ] " <>
   "Gain feedback { gain 0.8 } [ delay ]" <>
   "End"
