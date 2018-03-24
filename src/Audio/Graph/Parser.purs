@@ -16,8 +16,8 @@ import Data.Map (empty, fromFoldable)
 import Data.Set (Set, fromFoldable, insert, member, singleton) as Set
 import Data.Tuple (Tuple(..))
 import Prelude (pure, (*>), (<$), (<$>), (<*), (<*>), (<<<), (<>), (==), (>>=))
-import Text.Parsing.StringParser (Parser, ParseError, fail, runParser)
-import Text.Parsing.StringParser.Combinators (choice, many, sepBy, sepBy1, (<?>))
+import Text.Parsing.StringParser (Parser, ParseError, fail, runParser, try)
+import Text.Parsing.StringParser.Combinators (choice, sepBy, sepBy1, (<?>))
 import Text.Parsing.StringParser.Num (numberOrInt, unsignedInt)
 import Text.Parsing.StringParser.String (string, regex, skipSpaces)
 
@@ -62,20 +62,20 @@ audioNode st =
 
 oscillatorNode :: SymbolTable -> Parser (Tuple NodeDef SymbolTable)
 oscillatorNode st =
-  buildNode <$> oscillatorNodeType <*> nodeId st <*> oscillatorAttributes <*> connections st
+  buildNode <$> oscillatorNodeType <*> nodeId st <*> oscillatorAttributes <*> connections
 
 audioBufferSourceNode :: SymbolTable -> Parser (Tuple NodeDef SymbolTable)
 audioBufferSourceNode st =
-  buildNode <$> audioBufferSourceNodeType <*> nodeId st <*> audioBufferSourceAttributes <*> connections st
+  buildNode <$> audioBufferSourceNodeType <*> nodeId st <*> audioBufferSourceAttributes <*> connections
 
 
 gainNode :: SymbolTable -> Parser (Tuple NodeDef SymbolTable)
 gainNode st =
-  buildNode <$> gainNodeType <*> nodeId st <*> gainAttributes <*> connections st
+  buildNode <$> gainNodeType <*> nodeId st <*> gainAttributes <*> connections
 
 biquadFilterNode :: SymbolTable -> Parser (Tuple NodeDef SymbolTable)
 biquadFilterNode st =
-  buildNode <$> biquadFilterNodeType <*> nodeId st <*> biquadFilterAttributes <*> connections st
+  buildNode <$> biquadFilterNodeType <*> nodeId st <*> biquadFilterAttributes <*> connections
 
 
 oscillatorNodeType :: Parser NodeType
@@ -88,7 +88,7 @@ audioBufferSourceNodeType =
 
 delayNode :: SymbolTable -> Parser (Tuple NodeDef SymbolTable)
 delayNode st =
-  buildNode <$> delayNodeType <*> nodeId st <*> delayAttributes <*> connections st
+  buildNode <$> delayNodeType <*> nodeId st <*> delayAttributes <*> connections
 
 gainNodeType :: Parser NodeType
 gainNodeType =
@@ -109,17 +109,24 @@ nodeId st =
 identifier :: Parser String
 identifier = regex "[a-z][a-zA-Z0-9]*" <* skipSpaces
 
-connections :: SymbolTable -> Parser (Set.Set Reference)
-connections st =
-  Set.fromFoldable <$> (openBracket *> connectionList st <* closeBracket)
+connections :: Parser (Set.Set Reference)
+connections =
+  Set.fromFoldable <$> (openBracket *> connectionList <* closeBracket)
 
-connectionList :: SymbolTable -> Parser (List Reference)
-connectionList st =
-  sepBy1 (connection st) (string "," <* skipSpaces)
+connectionList :: Parser (List Reference)
+connectionList =
+  sepBy1 connection (string "," <* skipSpaces)
 
-connection :: SymbolTable -> Parser Reference
-connection st =
-  NodeRef <$> identifier
+connection :: Parser Reference
+connection =
+  choice
+    [ try parameterRef
+    , NodeRef <$> identifier
+    ]
+
+parameterRef :: Parser Reference
+parameterRef =
+  ParameterRef <$> identifier <*> ((string ".") *> identifier)
 
 -- audio params
 
@@ -378,16 +385,6 @@ checkValidNodeId st nodeId =
     in
       pure (Tuple nodeId {nodeNames} )
 
--- check that a reference to a node already exists
-{- now done in semantic checker
-checkValidNodeRef :: SymbolTable -> String -> Parser String
-checkValidNodeRef st nodeId =
-  if Set.member nodeId st.nodeNames then
-    pure nodeId
-  else
-    fail ("identifier: " <> nodeId <> " has not been defined")
--}
-
 -- builders
 
 buildNode :: NodeType -> Tuple String SymbolTable -> AttributeMap -> Set.Set Reference -> Tuple NodeDef SymbolTable
@@ -397,6 +394,8 @@ buildNode nodeType (Tuple id st) attributes connections =
 buildNodeList :: Tuple NodeDef SymbolTable -> Tuple (List NodeDef) SymbolTable -> Tuple AudioGraph SymbolTable
 buildNodeList (Tuple n _) (Tuple ns st) =
   Tuple (n : ns) st
+
+
 
 -- | Parse an audio graph
 parse :: String -> Either ParseError (Tuple AudioGraph SymbolTable)
