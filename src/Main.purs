@@ -24,7 +24,7 @@ main = do
     delay (Milliseconds $ 4000.0)
     -}
     ctx <- makeAudioContext
-    _ <- launchAff $ play ctx 3.0 example5
+    _ <- launchAff $ play ctx 3.0 example6
     pure unit
 
 play :: forall e. AudioContext -> Number -> String
@@ -76,4 +76,12 @@ example5 =
   "AudioBufferSource abs { url ogg/chop.ogg, loop true}  [ delay, output ]" <>
   "Delay delay { delayTime 0.5 } [ feedback, output ] " <>
   "Gain feedback { gain 0.8 } [ delay ]" <>
+  "End"
+
+-- frequency modulation
+example6 :: String
+example6 =
+  "Oscillator modulator { frequency 0.8 } [ gain1 ]" <>
+  "Oscillator carrier { frequency 300.0 } [ output ]" <>
+  "Gain gain1 { gain 30.0 } [ carrier.frequency ] " <>
   "End"

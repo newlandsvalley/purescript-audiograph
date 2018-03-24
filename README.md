@@ -3,10 +3,16 @@ purescript-audiograph
 
 The idea is to build a simple proof of concept to provide a declarative interface into web-audio in purescript - something roughly along the lines of [visual-audio-graph](https://github.com/benji6/virtual-audio-graph).
 
-Example
--------
+Level of support for Web-Audio
+------------------------------
 
-Nodes may be listed in any order, ending with the key word _End_. The number of supported nodes is growing - six at the moment - an implicit __destination__ (output), __Oscillator__, __AudioBufferSource__, __BiquadFilter__, __Delay__ and __Gain__.  For example - 
+Six nodes are supported at the moment - an implicit __destination__ (output), __Oscillator__, __AudioBufferSource__, __BiquadFilter__, __Delay__ and __Gain__. This includes all the nodes completed in Chris Watersons original [purescript-webaudio](https://github.com/waterson/purescript-webaudio) library together with a couple of extra ones from my port of that library.
+
+
+Examples
+--------
+
+Nodes may be listed in any order, ending with the key word _End_.
 
 simple oscillator:
 
@@ -43,7 +49,16 @@ feedback:
   End
 ```
 
-Each line defines a new Audio node in the graph starting with the node type and id.  The curly braces define attributes for the node which are either simple scalar values or else complex Audio Params (contained within square braces). The final square braces hold the connections from that node to any other node(s). An implicit Destination node, named output, is always present by default. 
+frequency modulation:
+
+```
+  Oscillator modulator { frequency 0.8 } [ gain1 ]
+  Oscillator carrier { frequency 300.0 } [ output ]
+  Gain gain1 { gain 30.0 } [ carrier.frequency ] 
+  End
+```
+
+Each line defines a new Audio node in the graph starting with the node type and id.  The curly braces define attributes for the node which are either simple scalar values or else complex Audio Params (contained within square braces). The final square braces hold the connections from that node to any other node(s) or to audio parameters on those nodes. An implicit Destination node, named output, is always present by default. 
 
 Building
 --------
@@ -58,4 +73,4 @@ Then host dist/index.html on your web server of choice.
 Contributing
 ------------
 
-The POC seems promising.  Contributions would be more than welcome to help nurture it a little.  [purescript-webaudio](https://github.com/waterson/purescript-webaudio) (on which this project is based) only covers a relatively small proportion of the Web-Audio API and PRs which attempt to extend its reach are not being actively merged. And of course, audiograph, at the moment, only uses a trivially small part even of this.  __visual-audio-graph__ has some nice approaches to modifying an existing graph and in specifiying custom nodes which we could perhaps steal.
+The POC seems promising.  Contributions would be more than welcome to help nurture it a little. purescript-webaudio only covers a relatively small proportion of the Web-Audio API and PRs which attempt to extend its reach are not being actively merged. And of course, audiograph, at the moment, only uses a trivially small part even of this.  __visual-audio-graph__ has some nice approaches to modifying an existing graph and in specifiying custom nodes which we could perhaps steal.

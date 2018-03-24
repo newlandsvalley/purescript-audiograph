@@ -10,7 +10,7 @@ import Audio.Graph.Attributes (AttributeMap,
 import Audio.WebAudio.AudioContext (createBufferSource, createOscillator, createGain, createBiquadFilter,
     createDelay, destination)
 import Audio.WebAudio.Types (WebAudio, AudioContext, AudioNode(..), OscillatorNode, GainNode,
-  BiquadFilterNode, AudioBufferSourceNode, DelayNode, connect)
+  BiquadFilterNode, AudioBufferSourceNode, DelayNode, connect, connectParam)
 import Control.Monad.Eff (Eff)
 import Data.Foldable (traverse_, foldM)
 import Data.Map (insert, lookup, singleton, size)
@@ -153,7 +153,28 @@ setConnection sourceNode ass target =
 setConnectionParam :: ∀ eff. AudioNode -> Assemblage -> String  -> String -> (Eff (wau :: WebAudio | eff) Unit)
 setConnectionParam sourceNode ass targetNode param =
   -- not yet implemented
-  pure unit
+  -- unsafeConnectParam modGainNode carrier "frequency"
+  trace ("connecting to target: " <> targetNode <> "." <> param) \_ ->
+  case lookup targetNode ass of
+    Just targetNode ->
+      -- this is very verbose but I haven't yet found a mechanism of generalising it
+      case sourceNode of
+        Gain n ->
+          connectParam n targetNode param
+        Oscillator n ->
+          connectParam n targetNode param
+        AudioBufferSource n ->
+          connectParam n targetNode param
+        BiquadFilter n ->
+          connectParam n targetNode param
+        Delay n ->
+          connectParam n targetNode param
+        Analyser n ->
+          connectParam n targetNode param
+        Destination n ->
+          connectParam n targetNode param
+    _ ->
+      pure unit
 
 -- attributes
 
