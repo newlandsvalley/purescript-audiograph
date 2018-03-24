@@ -2,7 +2,7 @@ module Audio.Graph.Parser (SymbolTable, parse) where
 
 -- | Parse a web-audio-graph DSL
 
-import Audio.Graph (AudioGraph, NodeType(..), NodeDef(..))
+import Audio.Graph (AudioGraph, NodeType(..), NodeDef(..), Reference(..))
 import Audio.Graph.Attributes (AudioAttribute, AttributeMap, AudioParamDef(..),
   oscillatorTypeAttr, numberAttr, stringAttr, boolAttr, audioParamsAttr, biquadFilterTypeAttr)
 import Audio.WebAudio.BiquadFilterNode (readBiquadFilterType)
@@ -109,17 +109,17 @@ nodeId st =
 identifier :: Parser String
 identifier = regex "[a-z][a-zA-Z0-9]*" <* skipSpaces
 
-connections :: SymbolTable -> Parser (Set.Set String)
+connections :: SymbolTable -> Parser (Set.Set Reference)
 connections st =
   Set.fromFoldable <$> (openBracket *> connectionList st <* closeBracket)
 
-connectionList :: SymbolTable -> Parser (List String)
+connectionList :: SymbolTable -> Parser (List Reference)
 connectionList st =
   sepBy1 (connection st) (string "," <* skipSpaces)
 
-connection :: SymbolTable -> Parser String
+connection :: SymbolTable -> Parser Reference
 connection st =
-  identifier
+  NodeRef <$> identifier
 
 -- audio params
 
@@ -390,7 +390,7 @@ checkValidNodeRef st nodeId =
 
 -- builders
 
-buildNode :: NodeType -> Tuple String SymbolTable -> AttributeMap -> Set.Set String -> Tuple NodeDef SymbolTable
+buildNode :: NodeType -> Tuple String SymbolTable -> AttributeMap -> Set.Set Reference -> Tuple NodeDef SymbolTable
 buildNode nodeType (Tuple id st) attributes connections =
   Tuple (NodeDef{ nodeType, id, attributes, connections}) st
 

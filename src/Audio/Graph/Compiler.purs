@@ -8,7 +8,7 @@ import Data.List (List, length)
 import Data.Set (Set, empty, insert, member, toUnfoldable)
 import Data.Foldable (foldl, intercalate)
 import Audio.Graph.Parser (SymbolTable, parse)
-import Audio.Graph (AudioGraph, NodeDef(..))
+import Audio.Graph (AudioGraph, NodeDef(..), Reference(..))
 import Prelude (($), (<>), show)
 
 type ErrorSet = Set String
@@ -47,22 +47,37 @@ checkGraph st graph =
   in
     foldl (checkNode st) errors graph
 
--- check a node for identifier erros
+-- check a node for identifier errors in its connections
 checkNode :: SymbolTable -> ErrorSet -> NodeDef -> ErrorSet
 checkNode st errors (NodeDef nd) =
   checkConnectionIds st errors nd.connections
 
--- add any identifiers not in the symbol table to the result
-checkConnectionIds :: SymbolTable -> ErrorSet -> Set String -> ErrorSet
+-- add any identifiers not in the symbol table to the error result set
+checkConnectionIds :: SymbolTable -> ErrorSet -> Set Reference -> ErrorSet
 checkConnectionIds st errors connections =
   --- (b -> a -> b) -> b -> f a -> b
-  foldl (checkConnectionId st) errors connections
+  foldl (checkConnectionRef st) errors connections
 
--- check that an identifer reference is defined somewhere as a done in the graph
+-- a checked reference may be to a node or to an audio parameter
+checkConnectionRef :: SymbolTable -> ErrorSet -> Reference -> ErrorSet
+checkConnectionRef st errors ref =
+  case ref of
+    NodeRef nodeId ->
+      checkConnectionNode st errors nodeId
+    ParameterRef nodeId parameterId ->
+      checkConnectionParam st errors nodeId parameterId
+
+-- check that an identifer reference is defined somewhere as a node in the graph
 -- (i.e. is in the node names in the symbol table)
-checkConnectionId :: SymbolTable -> ErrorSet -> String -> ErrorSet
-checkConnectionId st errors identifier =
+checkConnectionNode :: SymbolTable -> ErrorSet -> String -> ErrorSet
+checkConnectionNode st errors identifier =
   if (member identifier st.nodeNames) then
     errors
   else
     insert identifier errors
+
+-- check that the node exists and that it has defined the audio param
+checkConnectionParam :: SymbolTable -> ErrorSet -> String -> String -> ErrorSet
+checkConnectionParam st errors nodeId paramId =
+  -- not yet implemented
+  errors

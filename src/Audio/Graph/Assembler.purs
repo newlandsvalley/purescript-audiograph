@@ -112,11 +112,19 @@ assembleConnections ass (NodeDef nd) =
         pure unit
 
 -- set all the connections from one node
-setConnections :: ∀ eff. AudioNode -> Assemblage -> Set String -> (Eff (wau :: WebAudio | eff) Unit)
+setConnections :: ∀ eff. AudioNode -> Assemblage -> Set Reference -> (Eff (wau :: WebAudio | eff) Unit)
 setConnections sourceNode ass targets =
-  traverse_ (setConnection sourceNode ass) targets
+  traverse_ (setConnectionRef sourceNode ass) targets
 
--- set one connection from a node
+setConnectionRef :: ∀ eff. AudioNode -> Assemblage -> Reference  -> (Eff (wau :: WebAudio | eff) Unit)
+setConnectionRef sourceNode ass ref =
+  case ref of
+    NodeRef nodeId ->
+      setConnection sourceNode ass nodeId
+    ParameterRef nodeId parameterId ->
+      setConnectionParam sourceNode ass nodeId parameterId
+
+-- set one connection from a node to a target node
 setConnection :: ∀ eff. AudioNode -> Assemblage -> String  -> (Eff (wau :: WebAudio | eff) Unit)
 setConnection sourceNode ass target =
   trace ("connecting to target: " <> target) \_ ->
@@ -140,6 +148,12 @@ setConnection sourceNode ass target =
           connect n targetNode
     _ ->
       pure unit
+
+-- set a connection from a node to an audio paramter on a target node
+setConnectionParam :: ∀ eff. AudioNode -> Assemblage -> String  -> String -> (Eff (wau :: WebAudio | eff) Unit)
+setConnectionParam sourceNode ass targetNode param =
+  -- not yet implemented
+  pure unit
 
 -- attributes
 
