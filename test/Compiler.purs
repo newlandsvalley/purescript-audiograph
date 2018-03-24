@@ -98,3 +98,7 @@ badInputSuite =
       assertCompileError
         "Gain id1 { gain 2 } [ output ] Oscillator id2 {} [ badref ] End"
         "identifier: badref has not been defined"
+    test "unknown node in parameter reference" do
+      assertCompileError
+        "Gain id1 { gain 2 } [ output ] Oscillator id2 {} [ badref.frequency ] End"
+        "identifier: badref.frequency has not been defined"

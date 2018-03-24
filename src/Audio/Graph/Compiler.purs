@@ -77,7 +77,14 @@ checkConnectionNode st errors identifier =
     insert identifier errors
 
 -- check that the node exists and that it has defined the audio param
+--
+-- We check that the node exists but not that the attribute exists on that node.
+-- I'm not sure if we should do this - are we allowed to connect to a node
+-- parameter if it implicitly belongs to the node but is not explicitly
+-- defined in the graph?
 checkConnectionParam :: SymbolTable -> ErrorSet -> String -> String -> ErrorSet
 checkConnectionParam st errors nodeId paramId =
-  -- not yet implemented
-  errors
+  if (member nodeId st.nodeNames) then
+    errors
+  else
+    insert (nodeId <> "." <> paramId) errors
