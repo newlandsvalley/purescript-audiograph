@@ -67,7 +67,7 @@ Updates to a running graph can be defined in a similar manner.  The update graph
 
 simple oscillator update:
 
-``` 
+```
   Oscillator id2 { frequency 880 }
   End
 ```
@@ -85,4 +85,4 @@ Then host dist/index.html on your web server of choice.
 Contributing
 ------------
 
-The POC seems promising.  Contributions would be more than welcome to help nurture it a little. purescript-webaudio only covers a relatively small proportion of the Web-Audio API and PRs which attempt to extend its reach are not being actively merged. __visual-audio-graph__ has some nice approaches in specifiying custom nodes which we could perhaps steal.
+The POC seems promising.  Contributions would be more than welcome to help nurture it a little. purescript-webaudio only covers a relatively small proportion of the Web-Audio API and PRs which attempt to extend its reach are not being actively merged. __visual-audio-graph__ has some nice approaches to specifying custom nodes which we could perhaps steal.

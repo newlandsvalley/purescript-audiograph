@@ -15,7 +15,7 @@ import Audio.WebAudio.Types (WebAudio, AudioContext)
 import Audio.WebAudio.AudioContext (makeAudioContext)
 import Audio.Graph (AudioGraph, Assemblage)
 import Audio.Graph.Compiler (compile, compileUpdate)
-import Audio.Graph.Control (start, startThenStop)
+import Audio.Graph.Control (start, startThenStop, stop)
 import Audio.Graph.Builder (build)
 import Audio.Graph.Updater (update)
 
@@ -29,7 +29,7 @@ main = do
     -}
     ctx <- makeAudioContext
     -- _ <- launchAff $ play ctx 3.0 example5
-    _ <- launchAff $ startThenUpdate ctx 3.0 example1 example1Update
+    _ <- launchAff $ startThenUpdate ctx 2.0 example1 example1Update
     pure unit
 
 play :: forall e. AudioContext -> Number -> String
@@ -65,13 +65,14 @@ startThenUpdate ctx duration text updateText =
         do
           assemblage <- build ctx graph
           either (\err -> liftEff' $ log ("load error: " <> err))
-                 (\assemblage -> updateSequence assemblage graphChange) assemblage
+                 (\assemblage -> updateSequence duration assemblage graphChange) assemblage
 
-updateSequence :: ∀ eff. Assemblage -> AudioGraph -> Aff (wau :: WebAudio | eff) Unit
-updateSequence assemblage graphChange = do
+updateSequence :: ∀ eff. Number -> Assemblage -> AudioGraph -> Aff (wau :: WebAudio | eff) Unit
+updateSequence duration assemblage graphChange = do
   _ <- liftEff' $ start 0.0 assemblage
   _ <- delay (Milliseconds 1000.0)
-  liftEff' $update empty assemblage graphChange
+  _ <- liftEff' $update empty assemblage graphChange
+  liftEff' $ stop duration assemblage
 
 
 example1 :: String
