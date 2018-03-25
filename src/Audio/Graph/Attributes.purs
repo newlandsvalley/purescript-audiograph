@@ -5,7 +5,9 @@ module Audio.Graph.Attributes
    setOscillatorTypeAttr, setOscillatorFrequencyAttr, setGainAttr, setDelayAttr,
    oscillatorTypeAttr, numberAttr, stringAttr, boolAttr, audioParamsAttr,
    biquadFilterTypeAttr, setBiquadFilterTypeAttr, setBiquadFilterFrequencyAttr,
-   setAudioBufferAttr
+   setAudioBufferAttr,
+   setOscillatorAttributes, setAudioBufferSourceAttributes,
+   setGainAttributes, setDelayAttributes, setBiquadFilterAttributes
    ) where
 
 -- | Audio node attributes.  These are either simple or consist of
@@ -264,3 +266,27 @@ setParam param paramDef =
       linearRampToValueAtTime n t param
     ExponentialRampToValueAtTime n t ->
       exponentialRampToValueAtTime n t param
+
+-- sets of node attributes
+
+setOscillatorAttributes :: ∀ eff. OscillatorNode -> AttributeMap -> (Eff (wau :: WebAudio | eff) Unit)
+setOscillatorAttributes osc map = do
+  _ <- setOscillatorTypeAttr osc map
+  setOscillatorFrequencyAttr osc map
+
+setAudioBufferSourceAttributes :: ∀ eff. AudioBufferSourceNode -> AttributeMap -> AudioBuffers -> (Eff (wau :: WebAudio | eff) Unit)
+setAudioBufferSourceAttributes node map buffers = do
+  setAudioBufferAttr node map buffers
+
+setGainAttributes :: ∀ eff. GainNode -> AttributeMap -> (Eff (wau :: WebAudio | eff) Unit)
+setGainAttributes gain map = do
+  setGainAttr gain map
+
+setDelayAttributes :: ∀ eff. DelayNode -> AttributeMap -> (Eff (wau :: WebAudio | eff) Unit)
+setDelayAttributes delayNode map = do
+  setDelayAttr delayNode map
+
+setBiquadFilterAttributes :: ∀ eff. BiquadFilterNode -> AttributeMap -> (Eff (wau :: WebAudio | eff) Unit)
+setBiquadFilterAttributes bqf map = do
+  _ <- setBiquadFilterTypeAttr bqf map
+  setBiquadFilterFrequencyAttr bqf map

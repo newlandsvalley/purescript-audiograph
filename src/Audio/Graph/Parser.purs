@@ -17,7 +17,7 @@ import Data.Set (Set, fromFoldable, insert, member, singleton) as Set
 import Data.Tuple (Tuple(..))
 import Prelude (pure, (*>), (<$), (<$>), (<*), (<*>), (<<<), (<>), (==), (>>=))
 import Text.Parsing.StringParser (Parser, ParseError, fail, runParser, try)
-import Text.Parsing.StringParser.Combinators (choice, sepBy, sepBy1, (<?>))
+import Text.Parsing.StringParser.Combinators (choice, option, sepBy, sepBy1, (<?>))
 import Text.Parsing.StringParser.Num (numberOrInt, unsignedInt)
 import Text.Parsing.StringParser.String (string, regex, skipSpaces)
 
@@ -111,7 +111,9 @@ identifier = regex "[a-z][a-zA-Z0-9]*" <* skipSpaces
 
 connections :: Parser (Set.Set Reference)
 connections =
-  Set.fromFoldable <$> (openBracket *> connectionList <* closeBracket)
+  Set.fromFoldable <$>
+    option Nil
+      (openBracket *> connectionList <* closeBracket)    
 
 connectionList :: Parser (List Reference)
 connectionList =

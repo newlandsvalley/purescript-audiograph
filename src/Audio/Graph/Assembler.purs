@@ -4,13 +4,11 @@ module Audio.Graph.Assembler (assemble) where
 
 import Audio.Graph
 import Audio.Buffer (AudioBuffers)
-import Audio.Graph.Attributes (AttributeMap,
-  setOscillatorTypeAttr, setOscillatorFrequencyAttr, setGainAttr, setBiquadFilterTypeAttr,
-  setDelayAttr, setBiquadFilterFrequencyAttr, setAudioBufferAttr)
+import Audio.Graph.Attributes (setOscillatorAttributes, setAudioBufferSourceAttributes,
+    setGainAttributes, setDelayAttributes, setBiquadFilterAttributes)
 import Audio.WebAudio.AudioContext (createBufferSource, createOscillator, createGain, createBiquadFilter,
     createDelay, destination)
-import Audio.WebAudio.Types (WebAudio, AudioContext, AudioNode(..), OscillatorNode, GainNode,
-  BiquadFilterNode, AudioBufferSourceNode, DelayNode, connect, connectParam)
+import Audio.WebAudio.Types (WebAudio, AudioContext, AudioNode(..),  connect, connectParam)
 import Control.Monad.Eff (Eff)
 import Data.Foldable (traverse_, foldM)
 import Data.Map (insert, lookup, singleton, size)
@@ -92,7 +90,7 @@ assembleDelay ctx ass (NodeDef nd) =
   trace ("assembling delay id: " <> nd.id) \_ ->
   do
     delayNode <- createDelay ctx
-    -- _ <- setDelayAttributes delayNode nd.attributes
+    _ <- setDelayAttributes delayNode nd.attributes
     let
       ass' = insert nd.id (Delay delayNode) ass
     pure ass'
@@ -177,7 +175,7 @@ setConnectionParam sourceNode ass targetNode param =
       pure unit
 
 -- attributes
-
+{-}
 setOscillatorAttributes :: ∀ eff. OscillatorNode -> AttributeMap -> (Eff (wau :: WebAudio | eff) Unit)
 setOscillatorAttributes osc map = do
   _ <- setOscillatorTypeAttr osc map
@@ -199,3 +197,4 @@ setBiquadFilterAttributes :: ∀ eff. BiquadFilterNode -> AttributeMap -> (Eff (
 setBiquadFilterAttributes bqf map = do
   _ <- setBiquadFilterTypeAttr bqf map
   setBiquadFilterFrequencyAttr bqf map
+-}

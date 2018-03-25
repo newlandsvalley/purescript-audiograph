@@ -1,4 +1,4 @@
-module Audio.Graph.Compiler (compile) where
+module Audio.Graph.Compiler (compile, compileUpdate) where
 
 -- | The compiler parses and then performs sematic checks
 
@@ -14,7 +14,7 @@ import Prelude (($), (<>), show)
 type ErrorSet = Set String
 
 
--- | A compiler which performs both parsing and semantic checks
+-- | compile a graph definition and perform semantic checks
 compile :: String -> Either String AudioGraph
 compile s =
   case parse s of
@@ -23,6 +23,17 @@ compile s =
 
     Left e ->
       Left $ show e
+
+-- | compile an update graph (which requires no semantic checks)
+compileUpdate :: String -> Either String AudioGraph
+compileUpdate s =
+  case parse s of
+    Right (Tuple graph _)  ->
+      Right graph
+
+    Left e ->
+      Left $ show e
+
 
 semCheck :: SymbolTable -> AudioGraph -> Either String AudioGraph
 semCheck st graph =

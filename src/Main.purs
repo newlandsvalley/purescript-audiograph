@@ -3,17 +3,21 @@ module Main where
 import Prelude
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Console (CONSOLE, log)
-import Control.Monad.Aff (Aff, liftEff', launchAff)
+import Control.Monad.Aff (Aff, liftEff', launchAff, delay)
 import Network.HTTP.Affjax (AJAX)
 import Data.Either (Either(..), either)
+import Data.Tuple (Tuple(..))
+import Data.Map (empty)
 import Data.Time.Duration (Milliseconds(..))
 
 
 import Audio.WebAudio.Types (WebAudio, AudioContext)
 import Audio.WebAudio.AudioContext (makeAudioContext)
-import Audio.Graph.Compiler (compile)
-import Audio.Graph.Control (startThenStop)
+import Audio.Graph (AudioGraph, Assemblage)
+import Audio.Graph.Compiler (compile, compileUpdate)
+import Audio.Graph.Control (start, startThenStop)
 import Audio.Graph.Builder (build)
+import Audio.Graph.Updater (update)
 
 
 main :: forall e. Eff (ajax :: AJAX, console :: CONSOLE, wau :: WebAudio | e) Unit
@@ -24,7 +28,8 @@ main = do
     delay (Milliseconds $ 4000.0)
     -}
     ctx <- makeAudioContext
-    _ <- launchAff $ play ctx 3.0 example6
+    -- _ <- launchAff $ play ctx 3.0 example5
+    _ <- launchAff $ startThenUpdate ctx 3.0 example1 example1Update
     pure unit
 
 play :: forall e. AudioContext -> Number -> String
@@ -36,16 +41,48 @@ play ctx duration text =
   in
     case audioGraph of
       Left err ->
-        liftEff' $ log ("parse error: " <> err)
+        liftEff' $ log ("compile error: " <> err)
       Right graph ->
         do
           assemblage <- build ctx graph
           liftEff' $ either (\err -> log ("load error: " <> err)) (startThenStop 0.0 duration) assemblage
 
+startThenUpdate :: forall e. AudioContext -> Number -> String -> String
+     -> Aff (ajax :: AJAX, console :: CONSOLE, wau :: WebAudio | e) Unit
+startThenUpdate ctx duration text updateText =
+  let
+    audioGraph=
+      compile text
+    updateGraph=
+      compileUpdate updateText
+  in
+    case Tuple audioGraph updateGraph of
+      Tuple (Left err) _ ->
+        liftEff' $ log ("nodedef compile error: " <> err)
+      Tuple _ (Left err) ->
+        liftEff' $ log ("update parse error: " <> (show err))
+      Tuple (Right graph) (Right graphChange) ->
+        do
+          assemblage <- build ctx graph
+          either (\err -> liftEff' $ log ("load error: " <> err))
+                 (\assemblage -> updateSequence assemblage graphChange) assemblage
+
+updateSequence :: ∀ eff. Assemblage -> AudioGraph -> Aff (wau :: WebAudio | eff) Unit
+updateSequence assemblage graphChange = do
+  _ <- liftEff' $ start 0.0 assemblage
+  _ <- delay (Milliseconds 1000.0)
+  liftEff' $update empty assemblage graphChange
+
+
 example1 :: String
 example1 =
   "Gain id1 { gain 2 } [ output ] " <>
   "Oscillator id2 { type square, frequency 440 } [ id1 ] " <>
+  "End"
+
+example1Update :: String
+example1Update =
+  "Oscillator id2 { type square, frequency 880 } [ id1 ] " <>
   "End"
 
 example2 :: String

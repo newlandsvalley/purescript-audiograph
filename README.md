@@ -60,6 +60,18 @@ frequency modulation:
 
 Each line defines a new Audio node in the graph starting with the node type and id.  The curly braces define attributes for the node which are either simple scalar values or else complex Audio Params (contained within square braces). The final square braces hold the connections from that node to any other node(s) or to audio parameters on those nodes. An implicit Destination node, named output, is always present by default.
 
+Updates
+-------
+
+Updates to a running graph can be defined in a similar manner.  The update graph defines a node (or nodes) with attributes that are to be updated.  The syntax is identical to that for the initial graph definition but without specifiying connections.  For example, you can increase the frequency of the simple oscillator to 880Hz as follows:
+
+simple oscillator update:
+
+``` 
+  Oscillator id2 { frequency 880 }
+  End
+```
+
 Building
 --------
 
@@ -73,4 +85,4 @@ Then host dist/index.html on your web server of choice.
 Contributing
 ------------
 
-The POC seems promising.  Contributions would be more than welcome to help nurture it a little. purescript-webaudio only covers a relatively small proportion of the Web-Audio API and PRs which attempt to extend its reach are not being actively merged. __visual-audio-graph__ has some nice approaches to modifying an existing graph and in specifiying custom nodes which we could perhaps steal.
+The POC seems promising.  Contributions would be more than welcome to help nurture it a little. purescript-webaudio only covers a relatively small proportion of the Web-Audio API and PRs which attempt to extend its reach are not being actively merged. __visual-audio-graph__ has some nice approaches in specifiying custom nodes which we could perhaps steal.
