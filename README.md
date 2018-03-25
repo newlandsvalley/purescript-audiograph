@@ -6,7 +6,7 @@ The idea is to build a simple proof of concept to provide a declarative interfac
 Level of support for Web-Audio
 ------------------------------
 
-Six nodes are supported at the moment - an implicit __destination__ (output), __Oscillator__, __AudioBufferSource__, __BiquadFilter__, __Delay__ and __Gain__. This includes all the nodes completed in Chris Watersons original [purescript-webaudio](https://github.com/waterson/purescript-webaudio) library together with a couple of extra ones from my port of that library.
+Six nodes are supported at the moment - an implicit __destination__ (output), __Oscillator__, __AudioBufferSource__, __BiquadFilter__, __Delay__ and __Gain__. This includes all the nodes completed in Chris Watersons original [purescript-webaudio](https://github.com/waterson/purescript-webaudio) library together with a couple of extra ones from my port of that library. Full details are given [here](https://github.com/newlandsvalley/purescript-audiograph/blob/master/NODES.md).
 
 
 Examples
