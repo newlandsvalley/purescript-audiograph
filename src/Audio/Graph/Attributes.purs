@@ -21,7 +21,7 @@ import Audio.WebAudio.BiquadFilterNode (BiquadFilterType, setFilterType,
 import Audio.WebAudio.GainNode (gain)
 import Audio.WebAudio.AudioParam (setValue, setValueAtTime,
   linearRampToValueAtTime, exponentialRampToValueAtTime)
-import Audio.WebAudio.AudioBufferSourceNode (setBuffer, setLoop)
+import Audio.WebAudio.AudioBufferSourceNode (setBuffer, setLoop, setLoopStart, setLoopEnd)
 import Audio.WebAudio.DelayNode (delayTime)
 import Audio.Buffer (AudioBuffers)
 import Data.Map (Map, insert, lookup)
@@ -270,6 +270,22 @@ setAudioBufferLoopAttr node map =
     _ ->
       pure unit
 
+setAudioBufferLoopStartAttr :: ∀ eff. AudioBufferSourceNode-> AttributeMap -> Eff ( wau :: WebAudio | eff) Unit
+setAudioBufferLoopStartAttr node map =
+  case getNumber "setLoopStart" map of
+    Just n ->
+      setLoopStart n node
+    _ ->
+      pure unit
+
+setAudioBufferLoopEndAttr :: ∀ eff. AudioBufferSourceNode-> AttributeMap -> Eff ( wau :: WebAudio | eff) Unit
+setAudioBufferLoopEndAttr node map =
+  case getNumber "setLoopEnd" map of
+    Just n ->
+      setLoopEnd n node
+    _ ->
+      pure unit
+
 -- | set a list of audio parameters
 setParams :: ∀ eff. AudioParam -> List AudioParamDef -> Eff ( wau :: WebAudio | eff) Unit
 setParams param paramDefs =
@@ -298,7 +314,10 @@ setOscillatorAttributes osc map = do
 
 setAudioBufferSourceAttributes :: ∀ eff. AudioBufferSourceNode -> AttributeMap -> AudioBuffers -> (Eff (wau :: WebAudio | eff) Unit)
 setAudioBufferSourceAttributes node map buffers = do
-  setAudioBufferAttr node map buffers
+  _ <- setAudioBufferAttr node map buffers
+  _ <- setAudioBufferLoopAttr node map
+  _ <- setAudioBufferLoopStartAttr node map
+  setAudioBufferLoopEndAttr node map
 
 setGainAttributes :: ∀ eff. GainNode -> AttributeMap -> (Eff (wau :: WebAudio | eff) Unit)
 setGainAttributes gain map = do

@@ -130,6 +130,14 @@ parameterRef :: Parser Reference
 parameterRef =
   ParameterRef <$> identifier <*> ((string ".") *> identifier)
 
+-- scalar params
+
+-- a general Number attribute
+numberAttribute :: String -> Parser (Tuple String AudioAttribute)
+numberAttribute paramName =
+  Tuple <$> keyWord paramName <*> (numberAttr <$> number)
+    <?> paramName
+
 -- audio params
 
 -- a general audio parameter attribute
@@ -199,12 +207,22 @@ audioBufferSourceAttributeList =
       [
         urlAttribute
       , loopAttribute
+      , setLoopStartAttribute
+      , setLoopEndAttribute
       ]
     ) comma
 
 urlAttribute :: Parser (Tuple String AudioAttribute)
 urlAttribute =
   Tuple <$> keyWord "url" <*> urlStringAttribute
+
+setLoopStartAttribute :: Parser (Tuple String AudioAttribute)
+setLoopStartAttribute =
+  numberAttribute "setLoopStart" 
+
+setLoopEndAttribute :: Parser (Tuple String AudioAttribute)
+setLoopEndAttribute =
+  numberAttribute "setLoopEnd"
 
 loopAttribute :: Parser (Tuple String AudioAttribute)
 loopAttribute =

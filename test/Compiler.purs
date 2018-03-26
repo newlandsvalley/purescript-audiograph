@@ -78,6 +78,9 @@ basicSuite =
       assertCompiles ("AudioBufferSource id1 { url  wav/techno.wav } [ output ] End")
     test "audio buffer 2 attributes" do
       assertCompiles ("AudioBufferSource id1 { url  wav/techno.wav, loop true } [ output ] End")
+    test "audio buffer 4 attributes" do
+      assertCompiles ("AudioBufferSource id1 " <>
+          "{ url  wav/techno.wav, loop true, setLoopStart 1.0, setLoopEnd 3.0 } [ output ] End")
     test "delay delayTime" do
       assertCompiles ("Delay id1 { delayTime 2.0 } [ output ] End")
     test "connect to param" do

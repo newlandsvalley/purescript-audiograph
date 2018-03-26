@@ -25,6 +25,8 @@ A sound source built by loading a sound resource (wav, mp3 etc.) into a buffer.
 | --------- | ---- |
 | url | String |
 | loop    | Boolean |
+| setLoopStart | Number |
+| setLoopEnd | Number |
 
 Gain
 ----
