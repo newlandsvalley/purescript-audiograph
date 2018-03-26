@@ -12,6 +12,7 @@ An oscillator sound source.
 | Attribute | Type |
 | --------- | ---- |
 | frequency | Audio Param |
+| detune    | Audio Param |
 | type      | sine, square, sawtooth, triangle or custom |
 
 AudioBufferSource

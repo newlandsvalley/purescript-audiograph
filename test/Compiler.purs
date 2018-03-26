@@ -64,6 +64,8 @@ basicSuite =
       assertCompiles ("Gain id1 { gain [ setValue 1, setValueAtTime 3 2, linearRampToValueAtTime 6 4 ] } [ output ] End")
     test "oscillator type" do
       assertCompiles ("Oscillator id1 { type square } [ output ] End")
+    test "oscillator detune" do
+      assertCompiles ("Oscillator id1 { detune [ setValue 2 ] } [ output ] End")
     test "oscillator 2 attributes" do
       assertCompiles ("Oscillator id1 { type triangle, frequency 440 } [ output ] End")
     test "biquad filter type" do

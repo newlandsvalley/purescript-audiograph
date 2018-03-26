@@ -113,7 +113,7 @@ connections :: Parser (Set.Set Reference)
 connections =
   Set.fromFoldable <$>
     option Nil
-      (openBracket *> connectionList <* closeBracket)    
+      (openBracket *> connectionList <* closeBracket)
 
 connectionList :: Parser (List Reference)
 connectionList =
@@ -164,6 +164,7 @@ oscillatorAttributeList =
       [
         oscillatorTypeAttribute
       , frequency
+      , detune
       ]
     ) comma
 
@@ -189,9 +190,13 @@ frequency =
   Tuple <$> keyWord "frequency" <*> audioParams
     <?> "frequency"
 
+detune :: Parser (Tuple String AudioAttribute)
+detune =
+  Tuple <$> keyWord "detune" <*> audioParams
+    <?> "detune"
+
 audioBufferSourceAttributes:: Parser AttributeMap
 audioBufferSourceAttributes =
-  -- noAttributes
   fromFoldable <$>
     (openCurlyBracket *> audioBufferSourceAttributeList <* closeCurlyBracket)
 
@@ -376,28 +381,26 @@ urlStringAttribute =
 -- check that an identifier for a new node has not already been used
 -- if valid, then add to the symbol table
 checkValidNodeId :: SymbolTable -> String -> Parser (Tuple String SymbolTable)
-checkValidNodeId st nodeId =
-  if (nodeId == "output") then
+checkValidNodeId st nodeName =
+  if (nodeName == "output") then
     fail ("identifier: output is reserved as the default output node")
-  else if Set.member nodeId st.nodeNames then
-    fail ("identifier: " <> nodeId <> " has already been used")
+  else if Set.member nodeName st.nodeNames then
+    fail ("identifier: " <> nodeName <> " has already been used")
   else
     let
-      nodeNames = Set.insert nodeId st.nodeNames
+      nodeNames = Set.insert nodeName st.nodeNames
     in
-      pure (Tuple nodeId {nodeNames} )
+      pure (Tuple nodeName {nodeNames} )
 
 -- builders
 
 buildNode :: NodeType -> Tuple String SymbolTable -> AttributeMap -> Set.Set Reference -> Tuple NodeDef SymbolTable
 buildNode nodeType (Tuple id st) attributes connections =
-  Tuple (NodeDef{ nodeType, id, attributes, connections}) st
+  Tuple (NodeDef{ nodeType, id, attributes, connections} ) st
 
 buildNodeList :: Tuple NodeDef SymbolTable -> Tuple (List NodeDef) SymbolTable -> Tuple AudioGraph SymbolTable
 buildNodeList (Tuple n _) (Tuple ns st) =
   Tuple (n : ns) st
-
-
 
 -- | Parse an audio graph
 parse :: String -> Either ParseError (Tuple AudioGraph SymbolTable)

@@ -63,9 +63,9 @@ startThenUpdate ctx duration text updateText =
         liftEff' $ log ("update parse error: " <> (show err))
       Tuple (Right graph) (Right graphChange) ->
         do
-          assemblage <- build ctx graph
+          eassemblage <- build ctx graph
           either (\err -> liftEff' $ log ("load error: " <> err))
-                 (\assemblage -> updateSequence duration assemblage graphChange) assemblage
+                 (\assemblage -> updateSequence duration assemblage graphChange) eassemblage
 
 updateSequence :: ∀ eff. Number -> Assemblage -> AudioGraph -> Aff (wau :: WebAudio | eff) Unit
 updateSequence duration assemblage graphChange = do
