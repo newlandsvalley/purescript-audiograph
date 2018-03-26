@@ -55,4 +55,5 @@ A node that filters selected frequencies
 | Attribute | Type |
 | --------- | ---- |
 | frequency | Audio Param |
+| quality   | Audio Param |
 | type      | lowpass, highpass, bandpass, lowshelf, highshelf, peaking, notch or allpass |

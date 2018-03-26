@@ -132,6 +132,12 @@ parameterRef =
 
 -- audio params
 
+-- a general audio parameter attribute
+audioParamAttribute :: String -> Parser (Tuple String AudioAttribute)
+audioParamAttribute paramName =
+  Tuple <$> keyWord paramName <*> audioParams
+    <?> paramName
+
 -- placeholder only
 noAttributes :: Parser AttributeMap
 noAttributes =
@@ -144,11 +150,7 @@ noAttributes =
 gainAttributes :: Parser AttributeMap
 gainAttributes =
   (fromFoldable <<< L.singleton) <$>
-    (openCurlyBracket *> gainAttribute <* closeCurlyBracket)
-
-gainAttribute :: Parser (Tuple String AudioAttribute)
-gainAttribute =
-  Tuple <$> keyWord "gain" <*> audioParams
+    (openCurlyBracket *> (audioParamAttribute "gain") <* closeCurlyBracket)
 
 -- oscillator attributes
 
@@ -163,8 +165,8 @@ oscillatorAttributeList =
     (choice
       [
         oscillatorTypeAttribute
-      , frequency
-      , detune
+      , audioParamAttribute "frequency"
+      , audioParamAttribute "detune"
       ]
     ) comma
 
@@ -184,16 +186,6 @@ oscillatorType =
       , keyWord "custom"
       ]
         <?> "oscillator type"
-
-frequency :: Parser (Tuple String AudioAttribute)
-frequency =
-  Tuple <$> keyWord "frequency" <*> audioParams
-    <?> "frequency"
-
-detune :: Parser (Tuple String AudioAttribute)
-detune =
-  Tuple <$> keyWord "detune" <*> audioParams
-    <?> "detune"
 
 audioBufferSourceAttributes:: Parser AttributeMap
 audioBufferSourceAttributes =
@@ -229,7 +221,8 @@ biquadFilterAttributeList =
     (choice
       [
         biquadFilterTypeAttribute
-      , frequency
+      , audioParamAttribute  "frequency"
+      , audioParamAttribute "quality"
       ]
     ) comma
 
@@ -253,17 +246,15 @@ biquadFilterType =
       ]
         <?> "biquad filter type"
 
+
 -- gain attributes
 
 -- at the moment we require a delayTime attribute, nothing more
 delayAttributes :: Parser AttributeMap
 delayAttributes =
   (fromFoldable <<< L.singleton) <$>
-    (openCurlyBracket *> delayAttribute <* closeCurlyBracket)
+    (openCurlyBracket *> (audioParamAttribute "delayTime") <* closeCurlyBracket)
 
-delayAttribute :: Parser (Tuple String AudioAttribute)
-delayAttribute =
-  Tuple <$> keyWord "delayTime" <*> audioParams
 
 -- general audio params
 

@@ -72,6 +72,8 @@ basicSuite =
       assertCompiles ("BiquadFilter id1 { type lowpass } [ output ] End")
     test "biquad filter frequency" do
       assertCompiles ("BiquadFilter id1 { frequency 80 } [ output ] End")
+    test "biquad filter quality" do
+      assertCompiles ("BiquadFilter id1 { quality 80 } [ output ] End")
     test "audio buffer source url" do
       assertCompiles ("AudioBufferSource id1 { url  wav/techno.wav } [ output ] End")
     test "audio buffer 2 attributes" do

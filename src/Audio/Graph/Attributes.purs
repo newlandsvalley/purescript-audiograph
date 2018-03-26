@@ -2,7 +2,7 @@ module Audio.Graph.Attributes
   (AudioAttribute, AttributeMap, AudioParamDef(..),
    addOscillatorType, addFrequency,
    getOscillatorType, getNumber, getString, biquadFilterTypeAttr,
-   oscillatorTypeAttr, numberAttr, stringAttr, boolAttr, audioParamsAttr,  
+   oscillatorTypeAttr, numberAttr, stringAttr, boolAttr, audioParamsAttr,
    setOscillatorAttributes, setAudioBufferSourceAttributes,
    setGainAttributes, setDelayAttributes, setBiquadFilterAttributes
    ) where
@@ -16,10 +16,11 @@ import Control.Monad.Eff (Eff)
 import Audio.WebAudio.Types (WebAudio, OscillatorNode, GainNode, BiquadFilterNode,
   AudioBufferSourceNode, DelayNode, AudioParam, AudioBuffer)
 import Audio.WebAudio.Oscillator (OscillatorType, detune, frequency, setOscillatorType)
-import Audio.WebAudio.BiquadFilterNode (BiquadFilterType, setFilterType, filterFrequency)
+import Audio.WebAudio.BiquadFilterNode (BiquadFilterType, setFilterType,
+   filterFrequency, quality)
 import Audio.WebAudio.GainNode (gain)
-import Audio.WebAudio.AudioParam (setValue, getValue, setValueAtTime,
-  linearRampToValueAtTime, exponentialRampToValueAtTime, cancelScheduledValues)
+import Audio.WebAudio.AudioParam (setValue, setValueAtTime,
+  linearRampToValueAtTime, exponentialRampToValueAtTime)
 import Audio.WebAudio.AudioBufferSourceNode (setBuffer, setLoop)
 import Audio.WebAudio.DelayNode (delayTime)
 import Audio.Buffer (AudioBuffers)
@@ -212,8 +213,19 @@ setBiquadFilterFrequencyAttr bqf map =
       pure unit
     ps ->
       do
-        frequencyParam <- filterFrequency bqf
-        setParams frequencyParam ps
+        audioParam <- filterFrequency bqf
+        setParams audioParam ps
+
+-- | set the biquad filter quality
+setBiquadFilterQualityAttr :: ∀ eff. BiquadFilterNode -> AttributeMap -> Eff ( wau :: WebAudio | eff) Unit
+setBiquadFilterQualityAttr bqf map =
+  case getAudioParams "quality" map of
+    Nil ->
+      pure unit
+    ps ->
+      do
+        audioParam <- quality bqf
+        setParams audioParam ps
 
 
 setGainAttr :: ∀ eff. GainNode -> AttributeMap -> Eff ( wau :: WebAudio | eff) Unit
@@ -299,4 +311,5 @@ setDelayAttributes delayNode map = do
 setBiquadFilterAttributes :: ∀ eff. BiquadFilterNode -> AttributeMap -> (Eff (wau :: WebAudio | eff) Unit)
 setBiquadFilterAttributes bqf map = do
   _ <- setBiquadFilterTypeAttr bqf map
+  _ <- setBiquadFilterQualityAttr bqf map
   setBiquadFilterFrequencyAttr bqf map
