@@ -1,7 +1,7 @@
 Supported Audio Nodes
 =====================
 
-This describes the varous audio nodes that are supported together with their attributes and types.
+This describes the various audio nodes that are supported together with their attributes and types. See the [web-audio](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API) specification for more details.
 
 Oscillator
 ----------
