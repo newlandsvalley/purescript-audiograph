@@ -15,6 +15,7 @@ import Audio.WebAudio.Types (WebAudio, AudioContext)
 import Audio.WebAudio.AudioContext (makeAudioContext)
 import Audio.Graph (AudioGraph, Assemblage)
 import Audio.Graph.Compiler (compile, compileUpdate)
+import Audio.Graph.Parser (PositionedParseError(..))
 import Audio.Graph.Control (start, startThenStop, stop)
 import Audio.Graph.Builder (build)
 import Audio.Graph.Updater (update)
@@ -40,8 +41,8 @@ play ctx duration text =
       compile text
   in
     case audioGraph of
-      Left err ->
-        liftEff' $ log ("compile error: " <> err)
+      Left (PositionedParseError ppe) ->
+        liftEff' $ log ("compile error: " <> ppe.error)
       Right graph ->
         do
           assemblage <- build ctx graph
@@ -57,10 +58,10 @@ startThenUpdate ctx duration text updateText =
       compileUpdate updateText
   in
     case Tuple audioGraph updateGraph of
-      Tuple (Left err) _ ->
-        liftEff' $ log ("nodedef compile error: " <> err)
-      Tuple _ (Left err) ->
-        liftEff' $ log ("update parse error: " <> (show err))
+      Tuple (Left (PositionedParseError ppe) ) _ ->
+        liftEff' $ log ("nodedef compile error: " <> ppe.error)
+      Tuple _ (Left (PositionedParseError ppe) ) ->
+        liftEff' $ log ("update parse error: " <> ppe.error)
       Tuple (Right graph) (Right graphChange) ->
         do
           eassemblage <- build ctx graph
