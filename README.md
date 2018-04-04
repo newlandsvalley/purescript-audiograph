@@ -72,15 +72,23 @@ simple oscillator update:
   End
 ```
 
-Building
---------
+Building the library
+--------------------
 
 from the current directory:
 
     $ bower install
+    $ pulp build
+
+Building the simple Examples
+----------------------------
+
+cd to simple-examples:
+
+    $ bower install
     $ ./build.sh
 
-Then host dist/index.html on your web server of choice.
+Then host simple-examples/dist/index.html on your web server of choice.
 
 Contributing
 ------------
