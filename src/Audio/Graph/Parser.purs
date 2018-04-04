@@ -1,4 +1,4 @@
-module Audio.Graph.Parser (SymbolTable, parse) where
+module Audio.Graph.Parser (PositionedParseError(..), SymbolTable, parse) where
 
 -- | Parse a web-audio-graph DSL
 
@@ -13,10 +13,11 @@ import Data.Int (toNumber)
 import Data.List (List(..), (:))
 import Data.List (singleton) as L
 import Data.Map (empty, fromFoldable)
+import Data.Bifunctor (bimap)
 import Data.Set (Set, fromFoldable, insert, member, singleton) as Set
 import Data.Tuple (Tuple(..))
-import Prelude (pure, (*>), (<$), (<$>), (<*), (<*>), (<<<), (<>), (==), (>>=))
-import Text.Parsing.StringParser (Parser, ParseError, fail, runParser, try)
+import Prelude (class Show, pure, show, (*>), (<$), (<$>), (<*), (<*>), (<<<), (<>), (==), (>>=))
+import Text.Parsing.StringParser (Parser(..), ParseError(..), Pos, fail, try)
 import Text.Parsing.StringParser.Combinators (choice, option, sepBy, sepBy1, (<?>))
 import Text.Parsing.StringParser.Num (numberOrInt, unsignedInt)
 import Text.Parsing.StringParser.String (string, regex, skipSpaces)
@@ -218,7 +219,7 @@ urlAttribute =
 
 setLoopStartAttribute :: Parser (Tuple String AudioAttribute)
 setLoopStartAttribute =
-  numberAttribute "setLoopStart" 
+  numberAttribute "setLoopStart"
 
 setLoopEndAttribute :: Parser (Tuple String AudioAttribute)
 setLoopEndAttribute =
@@ -411,7 +412,26 @@ buildNodeList :: Tuple NodeDef SymbolTable -> Tuple (List NodeDef) SymbolTable -
 buildNodeList (Tuple n _) (Tuple ns st) =
   Tuple (n : ns) st
 
+-- | a parse error and its accompanying position in the text
+newtype PositionedParseError = PositionedParseError
+  { pos :: Int
+  , error :: String
+  }
+
+instance showKeyPositionedParseError :: Show PositionedParseError where
+  show (PositionedParseError err) = err.error <> " at position " <> show err.pos
+
+-- | Run a parser for an input string, returning either a positioned error or a result.
+runParser1 :: forall a. Parser a -> String -> Either PositionedParseError a
+runParser1 (Parser p) s =
+  let
+    formatErr :: { pos :: Pos, error :: ParseError } -> PositionedParseError
+    formatErr { pos : pos, error : ParseError err } =
+      PositionedParseError { pos : pos, error : err}
+  in
+    bimap formatErr _.result (p { str: s, pos: 0 })
+
 -- | Parse an audio graph
-parse :: String -> Either ParseError (Tuple AudioGraph SymbolTable)
+parse :: String -> Either PositionedParseError (Tuple AudioGraph SymbolTable)
 parse s =
-  runParser (audioNodes initialSymbolTable) s
+  runParser1 (audioNodes initialSymbolTable) s
