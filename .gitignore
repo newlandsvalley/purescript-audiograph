@@ -4,6 +4,7 @@
 /output/
 /generated-docs/
 /.psc-package/
+/audiograph-editor/
 /dist/*.js
 /.psc*
 /.purs*

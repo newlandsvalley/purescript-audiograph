@@ -1,0 +1,19 @@
+{
+  "name": "audiograph-simple-examples",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "output"
+  ],
+  "dependencies": {
+    "purescript-console": "^3.0.0",
+    "purescript-audiograph": "https://github.com/newlandsvalley/purescript-audiograph.git"
+  },
+  "devDependencies": {
+    "purescript-psci-support": "^3.0.0"
+  },
+  "resolutions": {
+    "purescript-arraybuffer-types": "^2.0.0"
+  }
+}
