@@ -4,7 +4,6 @@
 /output/
 /generated-docs/
 /.psc-package/
-/audiograph-editor/
 /simple-examples/bower_components/
 /simple-examples/output/
 /simple-examples/dist/*.js
