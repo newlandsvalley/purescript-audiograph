@@ -1,7 +1,7 @@
 module Main where
 
 import Prelude
-import Audio.WebAudio.Types (WebAudio, AudioContext)
+import Audio.WebAudio.Types (WebAudio)
 import Audio.WebAudio.AudioContext (makeAudioContext)
 import Control.Monad.Eff (Eff)
 import Halogen.Aff as HA
@@ -10,7 +10,6 @@ import Halogen as H
 
 import JS.FileIO (FILEIO)
 import Network.HTTP.Affjax (AJAX)
-
 import Container as Container
 
 main :: Eff (HA.HalogenEffects (ajax :: AJAX, wau :: WebAudio, fileio :: FILEIO )) Unit

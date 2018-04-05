@@ -145,6 +145,7 @@ component ctx =
           , HH.slot' clearTextSlotNo unit (Button.component "clear") unit (HE.input HandleClearButton)
           ]
       ,  renderPlayButton state
+      ,  debug state
       ]
       -- right pane - editor
       , HH.div
@@ -168,6 +169,16 @@ component ctx =
       Left err ->
         HH.div_
           [  ]
+
+  debug :: State -> H.ParentHTML Query ChildQuery ChildSlot (Aff (AppEffects eff))
+  debug state =
+    case state.assemblage of
+      Just ass ->
+        HH.div_
+          [HH.text "assemblage present"]
+      _ ->
+        HH.div_
+          [HH.text "assemblage absent"]
 
   eval :: Query ~> H.ParentDSL State Query ChildQuery ChildSlot Void (Aff (AppEffects eff))
   eval (HandleAUGFile (FIC.FileLoaded filespec) next) = do
