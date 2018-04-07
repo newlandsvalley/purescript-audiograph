@@ -34,6 +34,7 @@ type State =
   , graphResult :: Either PositionedParseError AudioGraph
   , assemblage :: Maybe Assemblage
   , fileName :: Maybe String
+  , playing :: Boolean
   }
 
 data Query a =
@@ -114,6 +115,7 @@ component ctx =
     , graphResult: nullGraph
     , assemblage : Nothing
     , fileName: Nothing
+    , playing : false
     }
 
   render :: State -> H.ParentHTML Query ChildQuery ChildSlot (Aff (AppEffects eff))
@@ -145,7 +147,6 @@ component ctx =
           , HH.slot' clearTextSlotNo unit (Button.component "clear") unit (HE.input HandleClearButton)
           ]
       ,  renderPlayButton state
-      ,  debug state
       ]
       -- right pane - editor
       , HH.div
@@ -160,16 +161,18 @@ component ctx =
     case state.graphResult of
       Right audioGraph ->
         let
-          buttonText = maybe "play" (\_ -> "stop") state.assemblage
+          offLabel = "play"
+          onLabel = "stop"
         in
           HH.div
             [ HP.class_ (H.ClassName "leftPanelComponent")]
             -- [ HH.slot' playerSlotNo unit (PC.component (PlayablePSoM psom) []) unit absurd  ]
-            [ HH.slot' playerSlotNo unit (Button.component buttonText) unit (HE.input HandlePlayButton)]
+            [ HH.slot' playerSlotNo unit (Button.toggledLabelComponent offLabel onLabel) unit (HE.input HandlePlayButton)]
       Left err ->
         HH.div_
           [  ]
 
+  -- temporary
   debug :: State -> H.ParentHTML Query ChildQuery ChildSlot (Aff (AppEffects eff))
   debug state =
     case state.assemblage of
@@ -241,7 +244,9 @@ play state =
         assemblage <- build state.ctx audioGraph
         -- calculate the new state
         let
-          newState = either (\err -> state) (\ass -> state { assemblage = Just ass }) assemblage
+          newState = either
+                      (\err -> state)
+                      (\ass -> state { assemblage = Just ass, playing = true }) assemblage
         -- play it if we can
         _ <- liftEff' $ either (\err -> pure unit) (Control.start 0.0) assemblage
         pure newState
@@ -255,6 +260,6 @@ stop state =
     Just ass ->
       do
         _ <- liftEff' $ Control.stop 0.0 ass
-        pure $ state { assemblage = Nothing }
+        pure $ state { assemblage = Nothing, playing = false }
     _ ->
-      pure state
+      pure $ state { assemblage = Nothing, playing = false }
