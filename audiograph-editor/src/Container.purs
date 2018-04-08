@@ -5,14 +5,12 @@ import Prelude
 
 import Audio.WebAudio.Types (WebAudio, AudioContext)
 import Audio.Graph (AudioGraph, Assemblage)
-import Audio.Graph.Control (start, stop) as Control
-import Audio.Graph.Builder (build)
-import Control.Monad.Aff (Aff, liftEff')
-import Data.Either (Either(..), either)
+import Control.Monad.Aff (Aff)
+import Data.Either (Either(..))
 import Data.Either.Nested (Either6)
 import Audio.Graph.Parser  (PositionedParseError(..))
 import Data.Functor.Coproduct.Nested (Coproduct6)
-import Data.Maybe (Maybe(..), fromMaybe, maybe)
+import Data.Maybe (Maybe(..), fromMaybe)
 import Data.MediaType (MediaType(..))
 import Halogen as H
 import Halogen.Component.ChildPath as CP
@@ -22,6 +20,7 @@ import Halogen.HTML.Properties as HP
 import Halogen.EditorComponent as ED
 import Halogen.FileInputComponent as FIC
 import Halogen.SimpleButtonComponent as Button
+import Halogen.AugPlayerComponent as Player
 import JS.FileIO (FILEIO, Filespec, saveTextFile)
 import Network.HTTP.Affjax (AJAX)
 import SampleText (cowbell, frequencyModulation)
@@ -38,11 +37,11 @@ type State =
   }
 
 data Query a =
-    HandleAUGFile FIC.Message a
+    HandleAugFile FIC.Message a
   | HandleClearButton Button.Message a
   | HandleSaveButton Button.Message a
   | HandleSampleButton Button.Message a
-  | HandlePlayButton Button.Message a
+  | HandleAugPlayer Player.Message a
   | HandleNewAudioGraphText ED.Message a
 
 augFileInputCtx :: FIC.Context
@@ -65,7 +64,7 @@ parseError graphResult =
     Left (PositionedParseError ppe) -> "parse error: " <> ppe.error
 
 -- type ChildQuery = Coproduct6 ED.Query FIC.Query Button.Query Button.Query Button.Query PC.Query
-type ChildQuery = Coproduct6 ED.Query FIC.Query Button.Query Button.Query Button.Query Button.Query
+type ChildQuery = Coproduct6 ED.Query FIC.Query Button.Query Button.Query Button.Query Player.Query
 
 -- slots and slot numbers
 type FileInputSlot = Unit
@@ -94,7 +93,7 @@ sampleTextSlotNo :: CP.ChildPath Button.Query ChildQuery SampleTextSlot ChildSlo
 sampleTextSlotNo = CP.cp5
 
 -- playerSlotNo :: CP.ChildPath PC.Query ChildQuery PlayerSlot ChildSlot
-playerSlotNo :: CP.ChildPath Button.Query ChildQuery PlayerSlot ChildSlot
+playerSlotNo :: CP.ChildPath Player.Query ChildQuery PlayerSlot ChildSlot
 playerSlotNo = CP.cp6
 
 
@@ -133,7 +132,7 @@ component ctx =
          [ HH.label
             [ HP.class_ (H.ClassName "labelAlignment") ]
             [ HH.text "load audiograph file:" ]
-         , HH.slot' psomFileSlotNo unit (FIC.component augFileInputCtx) unit (HE.input HandleAUGFile)
+         , HH.slot' psomFileSlotNo unit (FIC.component augFileInputCtx) unit (HE.input HandleAugFile)
          , HH.slot' sampleTextSlotNo unit (Button.component "example") unit (HE.input HandleSampleButton)
          ]
       ,  HH.div
@@ -156,6 +155,19 @@ component ctx =
           ]
     ]
 
+  renderPlayButton ::  ∀ eff1. State -> H.ParentHTML Query ChildQuery ChildSlot (Aff (ajax :: AJAX, wau :: WebAudio | eff1))
+  renderPlayButton state =
+    case state.graphResult of
+      Right audioGraph ->
+        HH.div
+          [ HP.class_ (H.ClassName "leftPanelComponent")]
+          -- [ HH.slot' playerSlotNo unit (PC.component (PlayablePSoM psom) []) unit absurd  ]
+          [ HH.slot' playerSlotNo unit (Player.component state.ctx audioGraph) unit (HE.input HandleAugPlayer) ]
+      Left err ->
+        HH.div_
+          [  ]
+
+{-}
   renderPlayButton ::  ∀ eff1. State -> H.ParentHTML Query ChildQuery ChildSlot (Aff (wau :: WebAudio | eff1))
   renderPlayButton state =
     case state.graphResult of
@@ -171,6 +183,7 @@ component ctx =
       Left err ->
         HH.div_
           [  ]
+-}
 
   -- temporary
   debug :: State -> H.ParentHTML Query ChildQuery ChildSlot (Aff (AppEffects eff))
@@ -184,7 +197,7 @@ component ctx =
           [HH.text "assemblage absent"]
 
   eval :: Query ~> H.ParentDSL State Query ChildQuery ChildSlot Void (Aff (AppEffects eff))
-  eval (HandleAUGFile (FIC.FileLoaded filespec) next) = do
+  eval (HandleAugFile (FIC.FileLoaded filespec) next) = do
     H.modify (\st -> st { fileName = Just filespec.name } )
     _ <- H.query' editorSlotNo unit $ H.action (ED.UpdateContent filespec.contents)
     pure next
@@ -206,10 +219,7 @@ component ctx =
   eval (HandleNewAudioGraphText (ED.AudioGraphResult r) next) = do
     H.modify (\st -> st { graphResult = r} )
     pure next
-  eval (HandlePlayButton (Button.Toggled _) next) = do
-    state <- H.get
-    newState <- H.liftAff $ togglePlayStop state
-    H.put newState
+  eval (HandleAugPlayer (Player.Toggled _) next) =
     pure next
 
 
@@ -222,44 +232,3 @@ getFileName state =
       name
     _ ->
       "untitled.aug"
-
--- toggle between playing the assembled audiograph and stopping it
-togglePlayStop :: forall eff. State
-      -> Aff (ajax :: AJAX, wau :: WebAudio | eff) State
-togglePlayStop state =
-  case state.assemblage of
-    Just ass ->
-      stop state
-    _ ->
-      play state
-
-
-play :: forall eff. State
-      -> Aff (ajax :: AJAX, wau :: WebAudio | eff) State
-play state =
-  case state.graphResult of
-    Right audioGraph ->
-      do
-        -- build the web-audio assemblage
-        assemblage <- build state.ctx audioGraph
-        -- calculate the new state
-        let
-          newState = either
-                      (\err -> state)
-                      (\ass -> state { assemblage = Just ass, playing = true }) assemblage
-        -- play it if we can
-        _ <- liftEff' $ either (\err -> pure unit) (Control.start 0.0) assemblage
-        pure newState
-    Left err ->
-      pure $ state { assemblage = Nothing }
-
-stop :: forall eff. State
-      -> Aff (ajax :: AJAX, wau :: WebAudio | eff) State
-stop state =
-  case state.assemblage of
-    Just ass ->
-      do
-        _ <- liftEff' $ Control.stop 0.0 ass
-        pure $ state { assemblage = Nothing, playing = false }
-    _ ->
-      pure $ state { assemblage = Nothing, playing = false }
