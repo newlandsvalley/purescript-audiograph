@@ -4,7 +4,7 @@ import Prelude
 
 
 import Audio.WebAudio.Types (WebAudio, AudioContext)
-import Audio.Graph (AudioGraph, Assemblage)
+import Audio.Graph (AudioGraph)
 import Control.Monad.Aff (Aff)
 import Data.Either (Either(..))
 import Data.Either.Nested (Either6)
@@ -31,9 +31,7 @@ type AppEffects eff = (ajax :: AJAX, wau :: WebAudio, fileio :: FILEIO | eff)
 type State =
   { ctx :: AudioContext
   , graphResult :: Either PositionedParseError AudioGraph
-  , assemblage :: Maybe Assemblage
   , fileName :: Maybe String
-  , playing :: Boolean
   }
 
 data Query a =
@@ -112,9 +110,7 @@ component ctx =
   initialState ctx =
     { ctx : ctx
     , graphResult: nullGraph
-    , assemblage : Nothing
     , fileName: Nothing
-    , playing : false
     }
 
   render :: State -> H.ParentHTML Query ChildQuery ChildSlot (Aff (AppEffects eff))
@@ -131,7 +127,7 @@ component ctx =
          [ HP.class_ (H.ClassName "leftPanelComponent")  ]
          [ HH.label
             [ HP.class_ (H.ClassName "labelAlignment") ]
-            [ HH.text "load audiograph file:" ]
+            [ HH.text "load aug file:" ]
          , HH.slot' psomFileSlotNo unit (FIC.component augFileInputCtx) unit (HE.input HandleAugFile)
          , HH.slot' sampleTextSlotNo unit (Button.component "example") unit (HE.input HandleSampleButton)
          ]
@@ -155,53 +151,26 @@ component ctx =
           ]
     ]
 
+  -- the play button is visible if we can parse the audiograph
   renderPlayButton ::  ∀ eff1. State -> H.ParentHTML Query ChildQuery ChildSlot (Aff (ajax :: AJAX, wau :: WebAudio | eff1))
   renderPlayButton state =
     case state.graphResult of
       Right audioGraph ->
         HH.div
           [ HP.class_ (H.ClassName "leftPanelComponent")]
-          -- [ HH.slot' playerSlotNo unit (PC.component (PlayablePSoM psom) []) unit absurd  ]
           [ HH.slot' playerSlotNo unit (Player.component state.ctx audioGraph) unit (HE.input HandleAugPlayer) ]
       Left err ->
         HH.div_
           [  ]
 
-{-}
-  renderPlayButton ::  ∀ eff1. State -> H.ParentHTML Query ChildQuery ChildSlot (Aff (wau :: WebAudio | eff1))
-  renderPlayButton state =
-    case state.graphResult of
-      Right audioGraph ->
-        let
-          offLabel = "play"
-          onLabel = "stop"
-        in
-          HH.div
-            [ HP.class_ (H.ClassName "leftPanelComponent")]
-            -- [ HH.slot' playerSlotNo unit (PC.component (PlayablePSoM psom) []) unit absurd  ]
-            [ HH.slot' playerSlotNo unit (Button.toggledLabelComponent offLabel onLabel) unit (HE.input HandlePlayButton)]
-      Left err ->
-        HH.div_
-          [  ]
--}
-
-  -- temporary
-  debug :: State -> H.ParentHTML Query ChildQuery ChildSlot (Aff (AppEffects eff))
-  debug state =
-    case state.assemblage of
-      Just ass ->
-        HH.div_
-          [HH.text "assemblage present"]
-      _ ->
-        HH.div_
-          [HH.text "assemblage absent"]
-
   eval :: Query ~> H.ParentDSL State Query ChildQuery ChildSlot Void (Aff (AppEffects eff))
   eval (HandleAugFile (FIC.FileLoaded filespec) next) = do
     H.modify (\st -> st { fileName = Just filespec.name } )
+    _ <- H.query' playerSlotNo unit $ H.action (Player.Stop)
     _ <- H.query' editorSlotNo unit $ H.action (ED.UpdateContent filespec.contents)
     pure next
   eval (HandleClearButton (Button.Toggled _) next) = do
+    _ <- H.query' playerSlotNo unit $ H.action (Player.Stop)
     _ <- H.query' editorSlotNo unit $ H.action (ED.UpdateContent "")
     pure next
   eval (HandleSaveButton (Button.Toggled _) next) = do
@@ -214,11 +183,14 @@ component ctx =
     _ <- H.liftEff $ saveTextFile fsp
     pure next
   eval (HandleSampleButton (Button.Toggled _) next) = do
+    _ <- H.query' playerSlotNo unit $ H.action (Player.Stop)
     _ <- H.query' editorSlotNo unit $ H.action (ED.UpdateContent frequencyModulation)
     pure next
   eval (HandleNewAudioGraphText (ED.AudioGraphResult r) next) = do
+    _ <- H.query' playerSlotNo unit $ H.action (Player.Stop)
     H.modify (\st -> st { graphResult = r} )
     pure next
+  -- all the activity of the audiograph player is handed off to the player itself  
   eval (HandleAugPlayer (Player.Toggled _) next) =
     pure next
 
