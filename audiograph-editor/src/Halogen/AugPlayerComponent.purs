@@ -34,7 +34,7 @@ type State =
 data Query a
   = Toggle a
   | Stop a
-
+  
 data Message = Toggled Boolean
 
 

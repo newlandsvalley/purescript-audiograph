@@ -1,4 +1,4 @@
-module SampleText (cowbell, frequencyModulation) where
+module SampleText (audioBuffer, cowbell, frequencyModulation) where
 
 import Prelude ((<>))
 
@@ -16,4 +16,12 @@ frequencyModulation =
   "Oscillator modulator { frequency 0.8 } [ gain1 ] \n" <>
   "Oscillator carrier { frequency 300.0 } [ output ] \n" <>
   "Gain gain1 { gain 30.0 } [ carrier.frequency ] \n" <>
+  "End"
+
+-- | audio buffer source
+audioBuffer :: String
+audioBuffer =
+  "Gain id1 { gain 2 } [ output ] \n" <>
+  "AudioBufferSource id2 { url https://raw.githubusercontent.com/borismus/webaudioapi.com/master/content/posts/audio-tag/chrono.mp3 \n" <>
+                         ", loop true}  [ id1 ] \n" <>
   "End"

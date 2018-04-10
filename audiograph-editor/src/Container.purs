@@ -23,7 +23,7 @@ import Halogen.SimpleButtonComponent as Button
 import Halogen.AugPlayerComponent as Player
 import JS.FileIO (FILEIO, Filespec, saveTextFile)
 import Network.HTTP.Affjax (AJAX)
-import SampleText (cowbell, frequencyModulation)
+import SampleText (audioBuffer, cowbell, frequencyModulation)
 
 
 type AppEffects eff = (ajax :: AJAX, wau :: WebAudio, fileio :: FILEIO | eff)
@@ -190,7 +190,7 @@ component ctx =
     _ <- H.query' playerSlotNo unit $ H.action (Player.Stop)
     H.modify (\st -> st { graphResult = r} )
     pure next
-  -- all the activity of the audiograph player is handed off to the player itself  
+  -- all the activity of the audiograph player is handed off to the player itself
   eval (HandleAugPlayer (Player.Toggled _) next) =
     pure next
 
