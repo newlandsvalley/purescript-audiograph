@@ -3,6 +3,8 @@ purescript-audiograph
 
 The idea is to build a simple proof of concept to provide a declarative interface into web-audio in purescript - something roughly along the lines of [visual-audio-graph](https://github.com/benji6/virtual-audio-graph).
 
+Try it out [here](http://www.tradtunedb.org.uk:8602/).
+
 Level of support for Web-Audio
 ------------------------------
 
