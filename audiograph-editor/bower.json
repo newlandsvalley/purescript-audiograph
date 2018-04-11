@@ -12,6 +12,7 @@
     "purescript-halogen-css": "^7.0.0",
     "purescript-css": "^3.3.0",
     "purescript-arraybuffer": "^6.0.0",
+    "purescript-random": "^3.0.0",
     "purescript-soundfonts": "^2.0.0",
     "purescript-js-fileio": "https://github.com/newlandsvalley/purescript-js-fileio.git#1.0.2",
     "purescript-halogen-components": "https://github.com/newlandsvalley/purescript-halogen-components.git",

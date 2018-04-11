@@ -10,9 +10,10 @@ import Halogen as H
 
 import JS.FileIO (FILEIO)
 import Network.HTTP.Affjax (AJAX)
+import Control.Monad.Eff.Random (RANDOM)
 import Container as Container
 
-main :: Eff (HA.HalogenEffects (ajax :: AJAX, wau :: WebAudio, fileio :: FILEIO )) Unit
+main :: Eff (HA.HalogenEffects (ajax :: AJAX, wau :: WebAudio, fileio :: FILEIO, random :: RANDOM )) Unit
 main = HA.runHalogenAff do
   ctx <- H.liftEff makeAudioContext
   body <- HA.awaitBody

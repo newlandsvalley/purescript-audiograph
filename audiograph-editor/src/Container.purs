@@ -23,10 +23,11 @@ import Halogen.SimpleButtonComponent as Button
 import Halogen.AugPlayerComponent as Player
 import JS.FileIO (FILEIO, Filespec, saveTextFile)
 import Network.HTTP.Affjax (AJAX)
-import SampleText (audioBuffer, cowbell, frequencyModulation)
+import Control.Monad.Eff.Random (RANDOM)
+import SampleText (randomSample)
 
 
-type AppEffects eff = (ajax :: AJAX, wau :: WebAudio, fileio :: FILEIO | eff)
+type AppEffects eff = (ajax :: AJAX, wau :: WebAudio, fileio :: FILEIO, random :: RANDOM | eff)
 
 type State =
   { ctx :: AudioContext
@@ -129,7 +130,7 @@ component ctx =
             [ HP.class_ (H.ClassName "labelAlignment") ]
             [ HH.text "load aug file:" ]
          , HH.slot' psomFileSlotNo unit (FIC.component augFileInputCtx) unit (HE.input HandleAugFile)
-         , HH.slot' sampleTextSlotNo unit (Button.component "example") unit (HE.input HandleSampleButton)
+         , HH.slot' sampleTextSlotNo unit (Button.component "random") unit (HE.input HandleSampleButton)
          ]
       ,  HH.div
           -- save
@@ -186,8 +187,9 @@ component ctx =
     pure next
   eval (HandleSampleButton (Button.Toggled _) next) = do
     H.modify (\st -> st { fileName = Nothing } )
+    sample <- H.liftEff randomSample
     _ <- H.query' playerSlotNo unit $ H.action (Player.Stop)
-    _ <- H.query' editorSlotNo unit $ H.action (ED.UpdateContent audioBuffer)
+    _ <- H.query' editorSlotNo unit $ H.action (ED.UpdateContent sample)
     pure next
   eval (HandleNewAudioGraphText (ED.AudioGraphResult r) next) = do
     _ <- refreshPlayerState r
