@@ -9,13 +9,17 @@ module Halogen.AugPlayerComponent where
 -- | remember that web-audio doesn't allow you to stop and then restart
 -- | an audio stream.  You must rebuild in between.
 
+-- | The player can be in the following states defined by Either String Assemblage
+-- | not started : Left ""
+-- | playing : Right assemblage
+-- | not playing because of a build error: left "error message"
+
 import Prelude
 
 
 import Control.Monad.Aff (Aff, liftEff')
 import Network.HTTP.Affjax (AJAX)
-import Data.Maybe (Maybe(..), maybe, isNothing)
-import Data.Either (either, hush)
+import Data.Either (Either(..), either, isLeft)
 import Halogen as H
 import Halogen.HTML as HH
 import Halogen.HTML.Core (ClassName(..))
@@ -33,7 +37,7 @@ type Input = AudioGraph
 type State =
   { ctx :: AudioContext
   , audioGraph :: AudioGraph
-  , assemblage :: Maybe Assemblage
+  , assemblage :: Either String Assemblage
   }
 
 data Query a
@@ -58,7 +62,7 @@ component ctx audioGraph =
   initialState ctx audioGraph =
     { ctx : ctx
     , audioGraph : audioGraph
-    , assemblage : Nothing
+    , assemblage : Left ""
     }
 
   render :: State -> H.ComponentHTML Query
@@ -70,11 +74,15 @@ component ctx audioGraph =
         else
           "play"
     in
-      HH.button
-        [ HE.onClick (HE.input_ Toggle)
-        , HP.class_ $ ClassName "hoverable"
+      HH.div_
+        [ HH.button
+            [ HE.onClick (HE.input_ Toggle)
+            , HP.class_ $ ClassName "hoverable"
+            ]
+            [ HH.text label ]
+          -- display any build error when trying to uild the assemblage from the graph
+          , HH.text (buildError state)
         ]
-        [ HH.text label ]
 
   eval :: ∀ eff'. Query ~> H.ComponentDSL State Query Message (Aff (PlayerEffects eff'))
   eval = case _ of
@@ -105,14 +113,14 @@ component ctx audioGraph =
 
 isPlaying :: State -> Boolean
 isPlaying state =
-  maybe false (\_ -> true) state.assemblage
+  either (\_ -> false) (\_ -> true) state.assemblage
 
 -- toggle between playing the assembled audiograph and stopping it
 togglePlayStop :: forall eff. State
       -> Aff (PlayerEffects eff) State
 togglePlayStop state =
   case state.assemblage of
-    Just ass ->
+    Right ass ->
       stop state
     _ ->
       play state
@@ -124,46 +132,32 @@ play :: forall eff. State
       -> Aff (PlayerEffects eff) State
 play state = do
   assemblage <-
-    if isNothing state.assemblage
+    if isLeft state.assemblage
       then
         -- build the web-audio assemblage
-        hush <$> build state.ctx state.audioGraph
+        build state.ctx state.audioGraph
       else
         -- don't bother rebuilding
         pure state.assemblage
   let
     newState = state { assemblage = assemblage }
   -- play it if we can
-  _ <- liftEff' $ maybe (pure unit) (Control.start 0.0) assemblage
+  _ <- liftEff' $ either (\err -> pure unit) (Control.start 0.0) assemblage
   pure newState
 
-
-{-}
--- play the audio graph if we can
-play :: forall eff. State
-      -> Aff (PlayerEffects eff) State
-play state =
-  do
-    -- build the web-audio assemblage
-    assemblage <- build state.ctx state.audioGraph
-    -- calculate the new state
-    let
-      newState = either
-          (\err -> state)
-          (\ass -> state { assemblage = Just ass }) assemblage
-      -- play it if we can
-    _ <- liftEff' $ either (\err -> pure unit) (Control.start 0.0) assemblage
-    pure newState
--}
 
 -- stop the playing
 stop :: forall eff. State
       -> Aff (PlayerEffects eff) State
 stop state =
   case state.assemblage of
-    Just ass ->
+    Right ass ->
       do
         _ <- liftEff' $ Control.stop 0.0 ass
-        pure $ state { assemblage = Nothing }
+        pure $ state { assemblage = Left "" }
     _ ->
-      pure $ state { assemblage = Nothing }
+      pure $ state { assemblage = Left "" }
+
+buildError :: State -> String
+buildError state =
+  either id (\_ -> "") state.assemblage
