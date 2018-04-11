@@ -171,6 +171,7 @@ component ctx =
     _ <- H.query' editorSlotNo unit $ H.action (ED.UpdateContent filespec.contents)
     pure next
   eval (HandleClearButton (Button.Toggled _) next) = do
+    H.modify (\st -> st { fileName = Nothing } )
     _ <- H.query' playerSlotNo unit $ H.action (Player.Stop)
     _ <- H.query' editorSlotNo unit $ H.action (ED.UpdateContent "")
     pure next
@@ -184,8 +185,9 @@ component ctx =
     _ <- H.liftEff $ saveTextFile fsp
     pure next
   eval (HandleSampleButton (Button.Toggled _) next) = do
+    H.modify (\st -> st { fileName = Nothing } )
     _ <- H.query' playerSlotNo unit $ H.action (Player.Stop)
-    _ <- H.query' editorSlotNo unit $ H.action (ED.UpdateContent frequencyModulation)
+    _ <- H.query' editorSlotNo unit $ H.action (ED.UpdateContent audioBuffer)
     pure next
   eval (HandleNewAudioGraphText (ED.AudioGraphResult r) next) = do
     _ <- refreshPlayerState r

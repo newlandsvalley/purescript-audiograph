@@ -6,6 +6,9 @@ module Halogen.AugPlayerComponent where
 -- | it also exposes a Stop query, allowing it to be stopped
 -- | by the calling program
 
+-- | remember that web-audio doesn't allow you to stop and then restart
+-- | an audio stream.  You must rebuild in between.
+
 import Prelude
 
 
