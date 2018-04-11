@@ -11,8 +11,8 @@ import Prelude
 
 import Control.Monad.Aff (Aff, liftEff')
 import Network.HTTP.Affjax (AJAX)
-import Data.Maybe (Maybe(..), maybe)
-import Data.Either (either)
+import Data.Maybe (Maybe(..), maybe, isNothing)
+import Data.Either (either, hush)
 import Halogen as H
 import Halogen.HTML as HH
 import Halogen.HTML.Core (ClassName(..))
@@ -25,6 +25,8 @@ import Audio.WebAudio.Types (WebAudio, AudioContext)
 
 type PlayerEffects eff = (ajax :: AJAX, wau :: WebAudio | eff)
 
+type Input = AudioGraph
+
 type State =
   { ctx :: AudioContext
   , audioGraph :: AudioGraph
@@ -34,17 +36,18 @@ type State =
 data Query a
   = Toggle a
   | Stop a
-  
+  | HandleInput AudioGraph a
+
 data Message = Toggled Boolean
 
 
-component :: forall eff. AudioContext -> AudioGraph -> H.Component HH.HTML Query Unit Message (Aff (PlayerEffects eff))
+component :: forall eff. AudioContext -> AudioGraph -> H.Component HH.HTML Query Input Message (Aff (PlayerEffects eff))
 component ctx audioGraph =
   H.component
     { initialState: const (initialState ctx audioGraph)
     , render: render
     , eval
-    , receiver: const Nothing
+    , receiver: HE.input HandleInput
     }
   where
 
@@ -72,12 +75,14 @@ component ctx audioGraph =
 
   eval :: ∀ eff'. Query ~> H.ComponentDSL State Query Message (Aff (PlayerEffects eff'))
   eval = case _ of
+    -- toggle between play and stop when the button is pressed
     Toggle next -> do
       state <- H.get
       newState <- H.liftAff $ togglePlayStop state
       H.put newState
       H.raise $ Toggled (isPlaying newState)
       pure next
+    -- stop when requested externally
     Stop next -> do
       state <- H.get
       if (isPlaying state)
@@ -88,6 +93,12 @@ component ctx audioGraph =
           pure next
         else
           pure next
+    -- stop then handle a new audiograph when requested externally
+    HandleInput audioGraph next -> do
+      state <- H.get
+      newState <- H.liftAff $ stop state
+      H.put newState { audioGraph = audioGraph }
+      pure next
 
 isPlaying :: State -> Boolean
 isPlaying state =
@@ -103,6 +114,28 @@ togglePlayStop state =
     _ ->
       play state
 
+
+-- play the audio graph if we can
+-- at the moment, this throws away build errors
+play :: forall eff. State
+      -> Aff (PlayerEffects eff) State
+play state = do
+  assemblage <-
+    if isNothing state.assemblage
+      then
+        -- build the web-audio assemblage
+        hush <$> build state.ctx state.audioGraph
+      else
+        -- don't bother rebuilding
+        pure state.assemblage
+  let
+    newState = state { assemblage = assemblage }
+  -- play it if we can
+  _ <- liftEff' $ maybe (pure unit) (Control.start 0.0) assemblage
+  pure newState
+
+
+{-}
 -- play the audio graph if we can
 play :: forall eff. State
       -> Aff (PlayerEffects eff) State
@@ -118,6 +151,7 @@ play state =
       -- play it if we can
     _ <- liftEff' $ either (\err -> pure unit) (Control.start 0.0) assemblage
     pure newState
+-}
 
 -- stop the playing
 stop :: forall eff. State

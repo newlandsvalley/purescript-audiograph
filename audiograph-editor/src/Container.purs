@@ -6,7 +6,7 @@ import Prelude
 import Audio.WebAudio.Types (WebAudio, AudioContext)
 import Audio.Graph (AudioGraph)
 import Control.Monad.Aff (Aff)
-import Data.Either (Either(..))
+import Data.Either (Either(..), either)
 import Data.Either.Nested (Either6)
 import Audio.Graph.Parser  (PositionedParseError(..))
 import Data.Functor.Coproduct.Nested (Coproduct6)
@@ -158,7 +158,8 @@ component ctx =
       Right audioGraph ->
         HH.div
           [ HP.class_ (H.ClassName "leftPanelComponent")]
-          [ HH.slot' playerSlotNo unit (Player.component state.ctx audioGraph) unit (HE.input HandleAugPlayer) ]
+          [ HH.slot' playerSlotNo unit (Player.component state.ctx audioGraph) audioGraph (HE.input HandleAugPlayer) ]
+          -- [ HH.slot' playerSlotNo unit (Player.component state.ctx audioGraph) unit (HE.input HandleAugPlayer) ]
       Left err ->
         HH.div_
           [  ]
@@ -187,13 +188,24 @@ component ctx =
     _ <- H.query' editorSlotNo unit $ H.action (ED.UpdateContent frequencyModulation)
     pure next
   eval (HandleNewAudioGraphText (ED.AudioGraphResult r) next) = do
-    _ <- H.query' playerSlotNo unit $ H.action (Player.Stop)
+    _ <- refreshPlayerState r
     H.modify (\st -> st { graphResult = r} )
     pure next
   -- all the activity of the audiograph player is handed off to the player itself
   eval (HandleAugPlayer (Player.Toggled _) next) =
     pure next
 
+-- refresh the state of the player
+-- by passing it the audiograph result
+refreshPlayerState :: ∀ eff.
+       Either PositionedParseError AudioGraph
+    -> H.ParentDSL State Query ChildQuery ChildSlot Void (Aff (AppEffects eff)) Unit
+refreshPlayerState audioGraphResult = do
+  _ <- either
+    (\_ -> H.query' playerSlotNo unit $ H.action (Player.Stop))
+    (\graph -> H.query' playerSlotNo unit $ H.action (Player.HandleInput graph))
+    audioGraphResult
+  pure unit
 
 -- helpers
 -- | get the file name
