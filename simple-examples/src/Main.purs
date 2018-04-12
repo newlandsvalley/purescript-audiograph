@@ -23,14 +23,9 @@ import Audio.Graph.Updater (update)
 
 main :: forall e. Eff (ajax :: AJAX, console :: CONSOLE, wau :: WebAudio | e) Unit
 main = do
-    {- at the moment I can't play more than one sample
-       do I need somehow to clean up the AudioContext before reuse?
-    _ <- liftEff' $ play ctx 3.0 example1
-    delay (Milliseconds $ 4000.0)
-    -}
     ctx <- makeAudioContext
-    -- _ <- launchAff $ play ctx 3.0 example5
-    _ <- launchAff $ startThenUpdate ctx 2.0 example1 example1Update
+    _ <- launchAff $ play ctx 3.0 example3
+    -- _ <- launchAff $ startThenUpdate ctx 2.0 example1 example1Update
     pure unit
 
 play :: forall e. AudioContext -> Number -> String
@@ -66,13 +61,13 @@ startThenUpdate ctx duration text updateText =
         do
           eassemblage <- build ctx graph
           either (\err -> liftEff' $ log ("load error: " <> err))
-                 (\assemblage -> updateSequence duration assemblage graphChange) eassemblage
+                 (\assemblage -> updateSequence ctx duration assemblage graphChange) eassemblage
 
-updateSequence :: ∀ eff. Number -> Assemblage -> AudioGraph -> Aff (wau :: WebAudio | eff) Unit
-updateSequence duration assemblage graphChange = do
+updateSequence :: ∀ eff. AudioContext -> Number -> Assemblage -> AudioGraph -> Aff (wau :: WebAudio | eff) Unit
+updateSequence ctx duration assemblage graphChange = do
   _ <- liftEff' $ start 0.0 assemblage
   _ <- delay (Milliseconds 1000.0)
-  _ <- liftEff' $update empty assemblage graphChange
+  _ <- liftEff' $update ctx empty assemblage graphChange
   liftEff' $ stop duration assemblage
 
 
@@ -98,7 +93,7 @@ example3 :: String
 example3 =
   "Oscillator osc2 { type square, frequency 800 } [ gain1 ] " <>
   "Oscillator osc1 { type square, frequency 540 } [ gain1 ]  " <>
-  "Gain gain1 { gain [ setValue 0.5, setValueAtTime 0.5 0, exponentialRampToValueAtTime 0.01 1.0 ] } [ filter1 ] " <>
+  "Gain gain1 { gain [ setValue 0.5, setValueAtTime 0.5 t + 0, exponentialRampToValueAtTime 0.01 t + 1.0 ] } [ filter1 ] " <>
   "BiquadFilter filter1 { type bandpass, frequency 800 } [ output ] " <>
   "End"
 

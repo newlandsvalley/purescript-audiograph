@@ -29,7 +29,10 @@ cowbell:
 ```
   Oscillator osc2 { type square, frequency 800 } [ gain1 ]
   Oscillator osc1 { type square, frequency 540 } [ gain1 ]
-  Gain gain1 { gain [ setValue 0.5, setValueAtTime 0.5 0, exponentialRampToValueAtTime 0.01 1.0 ] } [ filter1 ]
+  Gain gain1 { gain [ setValue 0.5, 
+                      setValueAtTime 0.5 t + 0, 
+                      exponentialRampToValueAtTime 0.01 t + 1.0 
+                    ] } [ filter1 ]
   BiquadFilter filter1 { type bandpass, frequency 800 } [ output ]
   End
 ```
@@ -60,7 +63,15 @@ frequency modulation:
   End
 ```
 
+Nodes
+-----
+
 Each line defines a new Audio node in the graph starting with the node type and id.  The curly braces define attributes for the node which are either simple scalar values or else complex Audio Params (contained within square braces). The final square braces hold the connections from that node to any other node(s) or to audio parameters on those nodes. An implicit Destination node, named output, is always present by default.
+
+Audio Params
+------------
+
+These may be _setValue_, _setValueAtTime_, _linearRampToValueAtTime_ or  _exponentialRampToValueAtTime_. The params which mention time use a final parameter to represent the time (in seconds) which is either a simple number (absolute javascript time) or which takes the form _t + n_ (time relative to the AudioContext start time).
 
 Updates
 -------
