@@ -11,7 +11,7 @@ module Audio.Graph.Attributes
 -- | AudioParams (https://developer.mozilla.org/en-US/docs/Web/API/AudioParam)
 -- | which have special properties
 
-import Prelude (Unit, ($), (<$>), (<$), (#), (>>=), id, bind, pure, unit)
+import Prelude (Unit, ($), (<$>), (<$), (#), (>>=), (<>), id, bind, pure, unit)
 import Control.Monad.Eff (Eff)
 import Audio.WebAudio.Types (WebAudio, OscillatorNode, GainNode, BiquadFilterNode,
   AudioBufferSourceNode, DelayNode, AudioParam, AudioBuffer)
@@ -26,12 +26,12 @@ import Audio.WebAudio.DelayNode (delayTime)
 import Audio.Buffer (AudioBuffers)
 import Data.Map (Map, insert, lookup)
 import Data.Maybe (Maybe(..), fromMaybe)
-import Data.List (List(..))
+import Data.List (List(..), length)
 import Data.Symbol (SProxy(..))
 import Data.Foldable (traverse_)
 import Data.Variant (Variant, inj, on, default)
 
-import Debug.Trace (trace)
+import Debug.Trace (trace, traceShow)
 
 -- | the (type of) an attribute of an audio node
 type AudioAttribute = Variant ( oscillatorType :: OscillatorType
@@ -162,7 +162,13 @@ getBool attName map =
 -- | get a named audio Params attribute
 getAudioParams :: String -> AttributeMap -> List AudioParamDef
 getAudioParams attName map =
-  fromMaybe Nil $ getVAudioParams <$> (lookup attName map)
+  let
+    paramList =
+      fromMaybe Nil $ getVAudioParams <$> (lookup attName map)
+  in
+    trace ("audio params for: " <> attName) \_ ->
+    traceShow (length paramList) \_ ->
+    paramList
 
 -- set Audio attributes from values in the map
 
