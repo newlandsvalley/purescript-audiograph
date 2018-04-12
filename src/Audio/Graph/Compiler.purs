@@ -9,7 +9,7 @@ import Data.Set (Set, empty, insert, member, toUnfoldable)
 import Data.Foldable (foldl, intercalate)
 import Audio.Graph.Parser (PositionedParseError(..), SymbolTable, parse)
 import Audio.Graph (AudioGraph, NodeDef(..), Reference(..))
-import Prelude (($), (<>), show)
+import Prelude (($), (<>))
 
 type ErrorSet = Set String
 

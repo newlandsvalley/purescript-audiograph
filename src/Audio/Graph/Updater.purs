@@ -4,68 +4,71 @@ module Audio.Graph.Updater (update) where
 
 import Audio.Graph
 import Audio.Buffer (AudioBuffers)
+import Audio.WebAudio.AudioContext (currentTime)
 import Audio.Graph.Attributes (setOscillatorAttributes, setAudioBufferSourceAttributes,
   setGainAttributes, setDelayAttributes, setBiquadFilterAttributes)
-import Audio.WebAudio.Types (WebAudio, AudioNode(..))
+import Audio.WebAudio.Types (WebAudio, AudioContext, AudioNode(..))
 import Control.Monad.Eff (Eff)
 import Data.Foldable (traverse_)
 import Data.Map (lookup, size)
 import Data.Maybe (Maybe(..))
-import Prelude (Unit, pure, show, unit, (<>), ($))
+import Prelude (Unit, bind, pure, show, unit, (<>), ($))
 
 import Debug.Trace (trace)
 
--- | assemble the web-audio graph as a playable assemblage
-update :: ∀ eff. AudioBuffers -> Assemblage -> AudioGraph -> (Eff (wau :: WebAudio | eff) Unit)
-update buffers ass graph =
+-- | assemble the update web-audio graph as a playable assemblage
+update :: ∀ eff. AudioContext -> AudioBuffers -> Assemblage -> AudioGraph -> (Eff (wau :: WebAudio | eff) Unit)
+update ctx buffers ass graph =
   trace "updating graph" \_ ->
-  traverse_ (updateNode buffers ass) graph
+  do
+    now <- currentTime ctx
+    traverse_ (updateNode now buffers ass) graph
 
-updateNode :: ∀ eff. AudioBuffers -> Assemblage -> NodeDef-> (Eff (wau :: WebAudio | eff) Unit)
-updateNode buffers ass (NodeDef nd) =
+updateNode :: ∀ eff. Number -> AudioBuffers -> Assemblage -> NodeDef-> (Eff (wau :: WebAudio | eff) Unit)
+updateNode startTime buffers ass (NodeDef nd) =
   trace ("update graph size: " <> (show $ size ass)) \_ ->
   case nd.nodeType of
-    OscillatorType -> updateOscillator ass (NodeDef nd)
+    OscillatorType -> updateOscillator startTime ass (NodeDef nd)
     AudioBufferSourceType -> updateAudioBufferSource ass buffers (NodeDef nd)
-    GainType-> updateGain ass (NodeDef nd)
-    BiquadFilterType-> updateBiquadFilter ass (NodeDef nd)
-    DelayType-> updateDelay ass (NodeDef nd)
+    GainType-> updateGain startTime ass (NodeDef nd)
+    BiquadFilterType-> updateBiquadFilter startTime ass (NodeDef nd)
+    DelayType-> updateDelay startTime ass (NodeDef nd)
 
 -- nodes
 
-updateOscillator :: ∀ eff. Assemblage -> NodeDef-> (Eff (wau :: WebAudio | eff) Unit)
-updateOscillator ass (NodeDef nd) =
+updateOscillator :: ∀ eff. Number -> Assemblage -> NodeDef-> (Eff (wau :: WebAudio | eff) Unit)
+updateOscillator startTime ass (NodeDef nd) =
   trace ("updating oscillator id: " <> nd.id) \_ ->
   let
     mNode = lookup nd.id ass
   in
     case mNode of
       Just (Oscillator node) ->
-        setOscillatorAttributes node nd.attributes
+        setOscillatorAttributes startTime node nd.attributes
       _ ->
         pure unit
 
-updateGain :: ∀ eff. Assemblage -> NodeDef-> (Eff (wau :: WebAudio | eff) Unit)
-updateGain ass (NodeDef nd) =
+updateGain :: ∀ eff. Number -> Assemblage -> NodeDef-> (Eff (wau :: WebAudio | eff) Unit)
+updateGain startTime ass (NodeDef nd) =
   trace ("updating gain id: " <> nd.id) \_ ->
   let
     mNode = lookup nd.id ass
   in
     case mNode of
       Just (Gain node) ->
-        setGainAttributes node nd.attributes
+        setGainAttributes startTime node nd.attributes
       _ ->
         pure unit
 
-updateBiquadFilter :: ∀ eff. Assemblage -> NodeDef-> (Eff (wau :: WebAudio | eff) Unit)
-updateBiquadFilter ass (NodeDef nd) =
+updateBiquadFilter :: ∀ eff. Number -> Assemblage -> NodeDef-> (Eff (wau :: WebAudio | eff) Unit)
+updateBiquadFilter startTime ass (NodeDef nd) =
   trace ("updating biquad filter id: " <> nd.id) \_ ->
   let
     mNode = lookup nd.id ass
   in
     case mNode of
       Just (BiquadFilter node) ->
-        setBiquadFilterAttributes node nd.attributes
+        setBiquadFilterAttributes startTime node nd.attributes
       _ ->
         pure unit
 
@@ -81,14 +84,14 @@ updateAudioBufferSource ass buffers (NodeDef nd) =
       _ ->
         pure unit
 
-updateDelay :: ∀ eff. Assemblage -> NodeDef-> (Eff (wau :: WebAudio | eff) Unit)
-updateDelay ass (NodeDef nd) =
+updateDelay :: ∀ eff. Number -> Assemblage -> NodeDef-> (Eff (wau :: WebAudio | eff) Unit)
+updateDelay startTime ass (NodeDef nd) =
   trace ("updating delay id: " <> nd.id) \_ ->
   let
     mNode = lookup nd.id ass
   in
     case mNode of
       Just (Delay node) ->
-        setDelayAttributes node nd.attributes
+        setDelayAttributes startTime node nd.attributes
       _ ->
         pure unit

@@ -5,6 +5,7 @@ import Control.Monad.Free (Free)
 
 import Data.Either (Either(..))
 import Audio.Graph.Compiler (compile)
+import Audio.Graph.Parser (PositionedParseError(..))
 
 import Test.Unit (Test, TestF, suite, test, success, failure)
 import Test.Unit.Assert as Assert
@@ -19,8 +20,8 @@ assertCompileError s expected =
       Right res ->
         failure "compiles when it shouldn't"
 
-      Left err ->
-        Assert.equal expected err
+      Left (PositionedParseError ppe) ->
+        Assert.equal expected ppe.error
 
 assertCompiles :: forall e. String -> Test e
 assertCompiles s =
@@ -62,6 +63,8 @@ basicSuite =
       assertCompiles ("Gain id1 { gain [ setValueAtTime 2 0.5, setValueAtTime 3 1.2 ] } [ output ] End")
     test "3 gain audio params" do
       assertCompiles ("Gain id1 { gain [ setValue 1, setValueAtTime 3 2, linearRampToValueAtTime 6 4 ] } [ output ] End")
+    test "relative times in audio params" do
+      assertCompiles ("Gain id1 { gain [ setValue 1, setValueAtTime 3 t + 2, linearRampToValueAtTime 6 t +4 ] } [ output ] End")
     test "oscillator type" do
       assertCompiles ("Oscillator id1 { type square } [ output ] End")
     test "oscillator detune" do

@@ -3,7 +3,7 @@ module Audio.Graph.Parser (PositionedParseError(..), SymbolTable, parse) where
 -- | Parse a web-audio-graph DSL
 
 import Audio.Graph (AudioGraph, NodeType(..), NodeDef(..), Reference(..))
-import Audio.Graph.Attributes (AudioAttribute, AttributeMap, AudioParamDef(..),
+import Audio.Graph.Attributes (AudioAttribute, AttributeMap, AudioParamDef(..), Time(..),
   oscillatorTypeAttr, numberAttr, stringAttr, boolAttr, audioParamsAttr, biquadFilterTypeAttr)
 import Audio.WebAudio.BiquadFilterNode (readBiquadFilterType)
 import Audio.WebAudio.Oscillator (readOscillatorType)
@@ -310,19 +310,19 @@ setValue =
 setValueAtTime :: Parser AudioParamDef
 setValueAtTime =
   SetValueAtTime <$> ((keyWord "setValueAtTime") *>
-    number) <*> number
+    number) <*> time
     <?> "setValueAtTime"
 
 linearRampToValueAtTime :: Parser AudioParamDef
 linearRampToValueAtTime  =
   LinearRampToValueAtTime <$> ((keyWord "linearRampToValueAtTime") *>
-    number) <*> number
+    number) <*> time
     <?> "linearRampToValueAtTime"
 
 exponentialRampToValueAtTime :: Parser AudioParamDef
 exponentialRampToValueAtTime  =
   ExponentialRampToValueAtTime  <$> ((keyWord "exponentialRampToValueAtTime") *>
-    number) <*> number
+    number) <*> time
     <?> "exponentialRampToValueAtTime"
 
 -- low level parsers
@@ -358,6 +358,20 @@ comma =
 number :: Parser Number
 number =
   numberOrInt <* skipSpaces
+
+time :: Parser Time
+time =
+  relativeTime <|> absoluteTime
+
+-- absolute time is javascript time
+absoluteTime :: Parser Time
+absoluteTime  =
+  Absolute <$> number
+
+-- relative tome is relative to audio context 'now'
+relativeTime :: Parser Time
+relativeTime =
+  Relative <$> ((string "t" <* skipSpaces <* string "+" <* skipSpaces) *> number)
 
 intAttribute :: Parser AudioAttribute
 intAttribute =

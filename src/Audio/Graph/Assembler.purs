@@ -7,7 +7,7 @@ import Audio.Buffer (AudioBuffers)
 import Audio.Graph.Attributes (setOscillatorAttributes, setAudioBufferSourceAttributes,
     setGainAttributes, setDelayAttributes, setBiquadFilterAttributes)
 import Audio.WebAudio.AudioContext (createBufferSource, createOscillator, createGain, createBiquadFilter,
-    createDelay, destination)
+    createDelay, destination, currentTime)
 import Audio.WebAudio.Types (WebAudio, AudioContext, AudioNode(..),  connect, connectParam)
 import Control.Monad.Eff (Eff)
 import Data.Foldable (traverse_, foldM)
@@ -50,8 +50,9 @@ assembleOscillator :: ∀ eff. AudioContext -> Assemblage -> NodeDef-> (Eff (wau
 assembleOscillator ctx ass (NodeDef nd) =
   trace ("assembling oscillator id: " <> nd.id) \_ ->
   do
+    now <- currentTime ctx
     oscNode <- createOscillator ctx
-    _ <- setOscillatorAttributes oscNode nd.attributes
+    _ <- setOscillatorAttributes now oscNode nd.attributes
     let
       ass' = insert nd.id (Oscillator oscNode) ass
     pure ass'
@@ -60,8 +61,9 @@ assembleGain :: ∀ eff. AudioContext -> Assemblage -> NodeDef-> (Eff (wau :: We
 assembleGain ctx ass (NodeDef nd) =
   trace ("assembling gain id: " <> nd.id) \_ ->
   do
+    now <- currentTime ctx
     gainNode <- createGain ctx
-    _ <- setGainAttributes gainNode nd.attributes
+    _ <- setGainAttributes now gainNode nd.attributes
     let
       ass' = insert nd.id (Gain gainNode) ass
     pure ass'
@@ -70,8 +72,9 @@ assembleBiquadFilter :: ∀ eff. AudioContext -> Assemblage -> NodeDef-> (Eff (w
 assembleBiquadFilter ctx ass (NodeDef nd) =
   trace ("assembling biquad filter id: " <> nd.id) \_ ->
   do
+    now <- currentTime ctx
     biquadFilterNode <- createBiquadFilter ctx
-    _ <- setBiquadFilterAttributes biquadFilterNode nd.attributes
+    _ <- setBiquadFilterAttributes now biquadFilterNode nd.attributes
     let
       ass' = insert nd.id (BiquadFilter biquadFilterNode) ass
     pure ass'
@@ -90,8 +93,9 @@ assembleDelay :: ∀ eff. AudioContext -> Assemblage -> NodeDef-> (Eff (wau :: W
 assembleDelay ctx ass (NodeDef nd) =
   trace ("assembling delay id: " <> nd.id) \_ ->
   do
+    now <- currentTime ctx
     delayNode <- createDelay ctx
-    _ <- setDelayAttributes delayNode nd.attributes
+    _ <- setDelayAttributes now delayNode nd.attributes
     let
       ass' = insert nd.id (Delay delayNode) ass
     pure ass'

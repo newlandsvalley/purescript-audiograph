@@ -1,5 +1,5 @@
 module Audio.Graph.Attributes
-  (AudioAttribute, AttributeMap, AudioParamDef(..),
+  (AudioAttribute, AttributeMap, AudioParamDef(..), Time(..),
    addOscillatorType, addFrequency,
    getOscillatorType, getNumber, getString, biquadFilterTypeAttr,
    oscillatorTypeAttr, numberAttr, stringAttr, boolAttr, audioParamsAttr,
@@ -11,7 +11,7 @@ module Audio.Graph.Attributes
 -- | AudioParams (https://developer.mozilla.org/en-US/docs/Web/API/AudioParam)
 -- | which have special properties
 
-import Prelude (Unit, ($), (<$>), (<$), (#), (>>=), (<>), id, bind, pure, unit)
+import Prelude (Unit, ($), (<$>), (<$), (#), (>>=), (<>), (+), id, bind, pure, unit)
 import Control.Monad.Eff (Eff)
 import Audio.WebAudio.Types (WebAudio, OscillatorNode, GainNode, BiquadFilterNode,
   AudioBufferSourceNode, DelayNode, AudioParam, AudioBuffer)
@@ -44,13 +44,18 @@ type AudioAttribute = Variant ( oscillatorType :: OscillatorType
 -- | a map of a set of such (named) attributes
 type AttributeMap = Map String AudioAttribute
 
+
+data Time =
+    Absolute Number
+  | Relative Number
+
 -- | an AudioParam definition
 -- | see https://developer.mozilla.org/en-US/docs/Web/API/AudioParam
 data AudioParamDef =
     SetValue Number
-  | SetValueAtTime Number Number
-  | LinearRampToValueAtTime Number Number
-  | ExponentialRampToValueAtTime Number Number
+  | SetValueAtTime Number Time
+  | LinearRampToValueAtTime Number Time
+  | ExponentialRampToValueAtTime Number Time
 
 -- data types
 _oscillatorType = SProxy :: SProxy "oscillatorType"
@@ -189,70 +194,70 @@ setBiquadFilterTypeAttr  bqf map =
       pure unit
 
 -- | set the oscillator frequency
-setOscillatorFrequencyAttr :: ∀ eff. OscillatorNode -> AttributeMap -> Eff ( wau :: WebAudio | eff) Unit
-setOscillatorFrequencyAttr osc map =
+setOscillatorFrequencyAttr :: ∀ eff. Number -> OscillatorNode -> AttributeMap -> Eff ( wau :: WebAudio | eff) Unit
+setOscillatorFrequencyAttr startTime osc map =
   case getAudioParams "frequency" map of
     Nil ->
       pure unit
     ps ->
       do
         audioParam <- frequency osc
-        setParams audioParam ps
+        setParams startTime audioParam ps
 
 -- | set the oscillator detune parameter
-setOscillatorDetuneAttr :: ∀ eff. OscillatorNode -> AttributeMap -> Eff ( wau :: WebAudio | eff) Unit
-setOscillatorDetuneAttr osc map =
+setOscillatorDetuneAttr :: ∀ eff. Number -> OscillatorNode -> AttributeMap -> Eff ( wau :: WebAudio | eff) Unit
+setOscillatorDetuneAttr startTime osc map =
   case getAudioParams "detune" map of
     Nil ->
       pure unit
     ps ->
       do
         audioParam <- detune osc
-        setParams audioParam ps
+        setParams startTime audioParam ps
 
 
 -- | set the biquad filter frequency
-setBiquadFilterFrequencyAttr :: ∀ eff. BiquadFilterNode -> AttributeMap -> Eff ( wau :: WebAudio | eff) Unit
-setBiquadFilterFrequencyAttr bqf map =
+setBiquadFilterFrequencyAttr :: ∀ eff. Number -> BiquadFilterNode -> AttributeMap -> Eff ( wau :: WebAudio | eff) Unit
+setBiquadFilterFrequencyAttr startTime bqf map =
   case getAudioParams "frequency" map of
     Nil ->
       pure unit
     ps ->
       do
         audioParam <- filterFrequency bqf
-        setParams audioParam ps
+        setParams startTime audioParam ps
 
 -- | set the biquad filter quality
-setBiquadFilterQualityAttr :: ∀ eff. BiquadFilterNode -> AttributeMap -> Eff ( wau :: WebAudio | eff) Unit
-setBiquadFilterQualityAttr bqf map =
+setBiquadFilterQualityAttr :: ∀ eff. Number -> BiquadFilterNode -> AttributeMap -> Eff ( wau :: WebAudio | eff) Unit
+setBiquadFilterQualityAttr startTime bqf map =
   case getAudioParams "quality" map of
     Nil ->
       pure unit
     ps ->
       do
         audioParam <- quality bqf
-        setParams audioParam ps
+        setParams startTime audioParam ps
 
 
-setGainAttr :: ∀ eff. GainNode -> AttributeMap -> Eff ( wau :: WebAudio | eff) Unit
-setGainAttr gainNode map =
+setGainAttr :: ∀ eff. Number -> GainNode -> AttributeMap -> Eff ( wau :: WebAudio | eff) Unit
+setGainAttr startTime gainNode map =
   case getAudioParams "gain" map of
     Nil ->
       pure unit
     ps ->
       do
         gainParam <- gain gainNode
-        setParams gainParam ps
+        setParams startTime gainParam ps
 
-setDelayAttr :: ∀ eff. DelayNode -> AttributeMap -> Eff ( wau :: WebAudio | eff) Unit
-setDelayAttr delayNode map =
+setDelayAttr :: ∀ eff. Number -> DelayNode -> AttributeMap -> Eff ( wau :: WebAudio | eff) Unit
+setDelayAttr startTime delayNode map =
   case getAudioParams "delayTime" map of
     Nil ->
       pure unit
     ps ->
       do
         delayParam <- delayTime delayNode
-        setParams delayParam ps
+        setParams startTime delayParam ps
 
 setAudioBufferAttr :: ∀ eff. AudioBufferSourceNode -> AttributeMap -> AudioBuffers -> Eff ( wau :: WebAudio | eff) Unit
 setAudioBufferAttr audioBufferNode attMap buffers =
@@ -293,30 +298,36 @@ setAudioBufferLoopEndAttr node map =
       pure unit
 
 -- | set a list of audio parameters
-setParams :: ∀ eff. AudioParam -> List AudioParamDef -> Eff ( wau :: WebAudio | eff) Unit
-setParams param paramDefs =
-  traverse_ (setParam param) paramDefs
+setParams :: ∀ eff. Number -> AudioParam -> List AudioParamDef -> Eff ( wau :: WebAudio | eff) Unit
+setParams startTime param paramDefs =
+  traverse_ (setParam startTime param) paramDefs
 
 -- | set an audio parameter
-setParam :: ∀ eff. AudioParam -> AudioParamDef -> Eff ( wau :: WebAudio | eff) Number
-setParam param paramDef =
+setParam :: ∀ eff. Number -> AudioParam -> AudioParamDef -> Eff ( wau :: WebAudio | eff) Number
+setParam startTime param paramDef =
   case paramDef of
     SetValue n ->
       n <$ setValue n param
-    SetValueAtTime n t ->
+    SetValueAtTime n (Absolute t) ->
       setValueAtTime n t param
-    LinearRampToValueAtTime n t ->
+    SetValueAtTime n (Relative t) ->
+      setValueAtTime n (startTime + t) param
+    LinearRampToValueAtTime n (Absolute t)->
       linearRampToValueAtTime n t param
-    ExponentialRampToValueAtTime n t ->
+    LinearRampToValueAtTime n (Relative t)->
+      linearRampToValueAtTime n (startTime + t) param
+    ExponentialRampToValueAtTime n (Absolute t) ->
       exponentialRampToValueAtTime n t param
+    ExponentialRampToValueAtTime n (Relative t) ->
+      exponentialRampToValueAtTime n (startTime + t) param
 
 -- sets of node attributes
 
-setOscillatorAttributes :: ∀ eff. OscillatorNode -> AttributeMap -> (Eff (wau :: WebAudio | eff) Unit)
-setOscillatorAttributes osc map = do
+setOscillatorAttributes :: ∀ eff. Number -> OscillatorNode -> AttributeMap -> (Eff (wau :: WebAudio | eff) Unit)
+setOscillatorAttributes startTime osc map = do
   _ <- setOscillatorTypeAttr osc map
-  _ <- setOscillatorDetuneAttr osc map
-  setOscillatorFrequencyAttr osc map
+  _ <- setOscillatorDetuneAttr startTime osc map
+  setOscillatorFrequencyAttr startTime osc map
 
 setAudioBufferSourceAttributes :: ∀ eff. AudioBufferSourceNode -> AttributeMap -> AudioBuffers -> (Eff (wau :: WebAudio | eff) Unit)
 setAudioBufferSourceAttributes node map buffers = do
@@ -325,16 +336,16 @@ setAudioBufferSourceAttributes node map buffers = do
   _ <- setAudioBufferLoopStartAttr node map
   setAudioBufferLoopEndAttr node map
 
-setGainAttributes :: ∀ eff. GainNode -> AttributeMap -> (Eff (wau :: WebAudio | eff) Unit)
-setGainAttributes gain map = do
-  setGainAttr gain map
+setGainAttributes :: ∀ eff. Number -> GainNode -> AttributeMap -> (Eff (wau :: WebAudio | eff) Unit)
+setGainAttributes startTime gain map = do
+  setGainAttr startTime gain map
 
-setDelayAttributes :: ∀ eff. DelayNode -> AttributeMap -> (Eff (wau :: WebAudio | eff) Unit)
-setDelayAttributes delayNode map = do
-  setDelayAttr delayNode map
+setDelayAttributes :: ∀ eff. Number -> DelayNode -> AttributeMap -> (Eff (wau :: WebAudio | eff) Unit)
+setDelayAttributes startTime delayNode map = do
+  setDelayAttr startTime delayNode map
 
-setBiquadFilterAttributes :: ∀ eff. BiquadFilterNode -> AttributeMap -> (Eff (wau :: WebAudio | eff) Unit)
-setBiquadFilterAttributes bqf map = do
+setBiquadFilterAttributes :: ∀ eff. Number -> BiquadFilterNode -> AttributeMap -> (Eff (wau :: WebAudio | eff) Unit)
+setBiquadFilterAttributes startTime bqf map = do
   _ <- setBiquadFilterTypeAttr bqf map
-  _ <- setBiquadFilterQualityAttr bqf map
-  setBiquadFilterFrequencyAttr bqf map
+  _ <- setBiquadFilterQualityAttr startTime bqf map
+  setBiquadFilterFrequencyAttr startTime bqf map
