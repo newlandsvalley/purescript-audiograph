@@ -101,7 +101,7 @@ biquadFilterNodeType =
 
 delayNodeType :: Parser NodeType
 delayNodeType =
-  GainType <$ keyWord "Delay"
+  DelayType <$ keyWord "Delay"
 
 nodeId :: SymbolTable -> Parser (Tuple String SymbolTable)
 nodeId st =

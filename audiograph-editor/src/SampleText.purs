@@ -30,11 +30,19 @@ audioBuffer =
                          ", loop true}  [ id1 ] \n" <>
   "End"
 
+feedback :: String
+feedback =
+  "AudioBufferSource abs { url assets/ogg/chop.ogg, loop true}  [ delay, output ] \n" <>
+  "Delay delay { delayTime 0.2 } [ feedback, output ] \n" <>
+  "Gain feedback { gain 0.8 } [ delay ] \n" <>
+  "End"
+
 samples :: Array String
 samples =
   [ cowbell
   , frequencyModulation
   , audioBuffer
+  , feedback
   ]
 
 randomSample :: ∀ eff. Eff (random :: RANDOM | eff) String
