@@ -5,7 +5,7 @@ module Audio.Graph.Attributes
    oscillatorTypeAttr, numberAttr, stringAttr, boolAttr, audioParamsAttr,
    setOscillatorAttributes, setAudioBufferSourceAttributes,
    setGainAttributes, setDelayAttributes, setBiquadFilterAttributes,
-   setStereoPannerAttributes
+   setStereoPannerAttributes, setDynamicsCompressorAttributes
    ) where
 
 -- | Audio node attributes.  These are either simple or consist of
@@ -15,7 +15,8 @@ module Audio.Graph.Attributes
 import Prelude (Unit, ($), (<$>), (<$), (#), (>>=), (<>), (+), id, bind, pure, unit)
 import Control.Monad.Eff (Eff)
 import Audio.WebAudio.Types (WebAudio, OscillatorNode, GainNode, BiquadFilterNode,
-  AudioBufferSourceNode, DelayNode, StereoPannerNode, AudioParam, AudioBuffer)
+  AudioBufferSourceNode, DelayNode, StereoPannerNode,
+  DynamicsCompressorNode, AudioParam, AudioBuffer)
 import Audio.WebAudio.Oscillator (OscillatorType, detune, frequency, setOscillatorType)
 import Audio.WebAudio.BiquadFilterNode (BiquadFilterType, setFilterType,
    filterFrequency, quality)
@@ -25,6 +26,7 @@ import Audio.WebAudio.AudioParam (setValue, setValueAtTime,
 import Audio.WebAudio.AudioBufferSourceNode (setBuffer, setLoop, setLoopStart, setLoopEnd)
 import Audio.WebAudio.DelayNode (delayTime)
 import Audio.WebAudio.StereoPannerNode (pan)
+import Audio.WebAudio.DynamicsCompressorNode (threshold, knee, ratio, attack, release)
 import Audio.Buffer (AudioBuffers)
 import Data.Map (Map, insert, lookup)
 import Data.Maybe (Maybe(..), fromMaybe)
@@ -271,6 +273,36 @@ setStereoPannerAttr startTime stereoPannerNode map =
         panParam <- pan stereoPannerNode
         setParams startTime panParam ps
 
+
+setCompressorThresholdAttr :: ∀ eff. Number -> DynamicsCompressorNode -> AttributeMap -> Eff ( wau :: WebAudio | eff) Unit
+setCompressorThresholdAttr startTime compressorNode map =
+  case getAudioParams "threshold" map of
+    Nil ->
+      pure unit
+    ps ->
+      do
+        thresholdParam <- threshold compressorNode
+        setParams startTime thresholdParam ps
+
+-- generalised function  to set the value of a named audio parameter on a
+-- dynamics compressor node
+setCompressorParam :: ∀ eff.
+    Number
+    -> DynamicsCompressorNode
+    -> String
+    -> (DynamicsCompressorNode -> (Eff (wau :: WebAudio | eff) AudioParam))
+    -> AttributeMap
+    -> Eff ( wau :: WebAudio | eff) Unit
+setCompressorParam startTime compressorNode attrName getf map =
+  case getAudioParams attrName map of
+    Nil ->
+      pure unit
+    ps ->
+      do
+        param <- getf compressorNode
+        setParams startTime param ps
+
+
 setAudioBufferAttr :: ∀ eff. AudioBufferSourceNode -> AttributeMap -> AudioBuffers -> Eff ( wau :: WebAudio | eff) Unit
 setAudioBufferAttr audioBufferNode attMap buffers =
   let
@@ -359,6 +391,17 @@ setDelayAttributes startTime delayNode map = do
 setStereoPannerAttributes :: ∀ eff. Number -> StereoPannerNode -> AttributeMap -> (Eff (wau :: WebAudio | eff) Unit)
 setStereoPannerAttributes startTime stereoPannerNode map = do
   setStereoPannerAttr startTime stereoPannerNode map
+
+setDynamicsCompressorAttributes :: ∀ eff. Number -> DynamicsCompressorNode -> AttributeMap -> (Eff (wau :: WebAudio | eff) Unit)
+setDynamicsCompressorAttributes startTime dynamicsCompressorNode map = do
+  -- setCompressorThresholdAttr startTime dynamicsCompressorNode map
+  _ <- setCompressorParam startTime dynamicsCompressorNode "threshold" threshold map
+  _ <- setCompressorParam startTime dynamicsCompressorNode "knee" knee map
+  _ <- setCompressorParam startTime dynamicsCompressorNode "ratio" ratio map
+  _ <- setCompressorParam startTime dynamicsCompressorNode "attack" attack map
+  _ <- setCompressorParam startTime dynamicsCompressorNode "release" release map
+  pure unit
+
 
 setBiquadFilterAttributes :: ∀ eff. Number -> BiquadFilterNode -> AttributeMap -> (Eff (wau :: WebAudio | eff) Unit)
 setBiquadFilterAttributes startTime bqf map = do

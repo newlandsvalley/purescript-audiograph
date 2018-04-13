@@ -6,9 +6,9 @@ import Audio.Graph
 import Audio.Buffer (AudioBuffers)
 import Audio.Graph.Attributes (setOscillatorAttributes, setAudioBufferSourceAttributes,
     setGainAttributes, setDelayAttributes, setBiquadFilterAttributes,
-    setStereoPannerAttributes)
+    setStereoPannerAttributes, setDynamicsCompressorAttributes)
 import Audio.WebAudio.AudioContext (createBufferSource, createOscillator, createGain, createBiquadFilter,
-    createDelay, createStereoPanner, destination, currentTime)
+    createDelay, createStereoPanner, createDynamicsCompressor, destination, currentTime)
 import Audio.WebAudio.Types (WebAudio, AudioContext, AudioNode(..),  connect, connectParam)
 import Control.Monad.Eff (Eff)
 import Data.Foldable (traverse_, foldM)
@@ -45,6 +45,7 @@ assembleNode ctx buffers ass (NodeDef nd) =
     BiquadFilterType-> assembleBiquadFilter ctx ass (NodeDef nd)
     DelayType-> assembleDelay ctx ass (NodeDef nd)
     StereoPannerType-> assembleStereoPanner ctx ass (NodeDef nd)
+    DynamicsCompressorType-> assembleDynamicsCompressor ctx ass (NodeDef nd)
 
 -- nodes
 
@@ -112,6 +113,17 @@ assembleStereoPanner ctx ass (NodeDef nd) =
     let
       ass' = insert nd.id (StereoPanner stereoPannerNode) ass
     pure ass'
+
+assembleDynamicsCompressor :: ∀ eff. AudioContext -> Assemblage -> NodeDef-> (Eff (wau :: WebAudio | eff) Assemblage)
+assembleDynamicsCompressor ctx ass (NodeDef nd) =
+  trace ("assembling dynamics compressor id: " <> nd.id) \_ ->
+  do
+    now <- currentTime ctx
+    dynamicsCompressorNode <- createDynamicsCompressor ctx
+    _ <- setDynamicsCompressorAttributes now dynamicsCompressorNode nd.attributes
+    let
+      ass' = insert nd.id (DynamicsCompressor dynamicsCompressorNode) ass
+    pure ass'
 -- connections
 
 -- assemble connections from the node defined in the NodeDef
@@ -162,6 +174,8 @@ setConnection sourceNode ass target =
           connect n targetNode
         StereoPanner n ->
           connect n targetNode
+        DynamicsCompressor n ->
+          connect n targetNode
         Destination n ->
           connect n targetNode
     _ ->
@@ -190,6 +204,8 @@ setConnectionParam sourceNode ass targetNode param =
         Analyser n ->
           connectParam n targetNode param
         StereoPanner n ->
+          connectParam n targetNode param
+        DynamicsCompressor n ->
           connectParam n targetNode param
         Destination n ->
           connectParam n targetNode param

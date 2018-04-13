@@ -9,7 +9,7 @@ import Data.Maybe (fromJust, fromMaybe)
 import Data.Int (fromString, toNumber)
 import Global (readFloat)
 import Control.Alt ((<|>))
-import Text.Parsing.StringParser (Parser)
+import Text.Parsing.StringParser (Parser, try)
 import Text.Parsing.StringParser.Combinators (choice, optionMaybe, (<?>))
 import Text.Parsing.StringParser.String (string, regex)
 
@@ -45,9 +45,10 @@ number =
     <?> "expected a number"
 
 -- | Parse a number which may or may not have a decimal point
+-- | we need to try number because both will consume any sign
 numberOrInt :: Parser Number
 numberOrInt =
-  number <|> (toNumber <$> int)
+  try number <|> (toNumber <$> int)
   <?> "expected a number (with or without decimal point)"
 
 

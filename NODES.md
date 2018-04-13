@@ -69,3 +69,19 @@ A node that pans between the left and right stereo channels.
 | Attribute | Type |
 | --------- | ---- |
 | pan | Audio Param (-1 <= p <= +1)|
+
+
+DynamicsCompressor
+------------------
+
+A node that which lowers the volume of the loudest parts of the signal in order to help prevent clipping and distortion.
+
+
+| Attribute | Type |
+| --------- | ---- |
+| threshold | Audio Param (-100 <= p <= 0)|
+| knee | Audio Param (0 <= p <= 40)|
+| ratio | Audio Param (1 <= p <= 20)|
+| attack | Audio Param (0 <= p <= 1)|
+| release | Audio Param (0 <= p <= 1)|
+

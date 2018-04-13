@@ -22,6 +22,7 @@ data NodeType =
  | BiquadFilterType
  | DelayType
  | StereoPannerType
+ | DynamicsCompressorType
 
 -- | a reference
 data Reference =

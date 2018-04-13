@@ -59,6 +59,7 @@ audioNode st =
     , biquadFilterNode st
     , delayNode st
     , stereoPannerNode st
+    , dynamicsCompressorNode st
     ]
       <?> "audio node"
 
@@ -111,6 +112,14 @@ stereoPannerNode st =
 stereoPannerNodeType :: Parser NodeType
 stereoPannerNodeType =
   StereoPannerType <$ keyWord "StereoPanner"
+
+dynamicsCompressorNode :: SymbolTable -> Parser (Tuple NodeDef SymbolTable)
+dynamicsCompressorNode st =
+  buildNode <$> dynamicsCompressorNodeType <*> nodeId st <*> dynamicsCompressorAttributes <*> connections
+
+dynamicsCompressorNodeType :: Parser NodeType
+dynamicsCompressorNodeType =
+  DynamicsCompressorType <$ keyWord "DynamicsCompressor"
 
 nodeId :: SymbolTable -> Parser (Tuple String SymbolTable)
 nodeId st =
@@ -286,6 +295,25 @@ stereoPannerAttributes =
   (fromFoldable <<< L.singleton) <$>
     (openCurlyBracket *> (audioParamAttribute "pan") <* closeCurlyBracket)
 
+-- dynamics compressor attributes
+
+dynamicsCompressorAttributes :: Parser AttributeMap
+dynamicsCompressorAttributes  =
+  fromFoldable <$>
+    (openCurlyBracket *> dynamicsCompressorAttributeList <* closeCurlyBracket)
+
+dynamicsCompressorAttributeList :: Parser (List (Tuple String AudioAttribute))
+dynamicsCompressorAttributeList =
+  sepBy
+    (choice
+      [
+        audioParamAttribute "threshold"
+      , audioParamAttribute "knee"
+      , audioParamAttribute "ratio"
+      , audioParamAttribute "attack"
+      , audioParamAttribute "release"
+      ]
+    ) comma
 
 -- general audio params
 
