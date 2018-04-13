@@ -41,7 +41,7 @@ A volume controller
 Delay
 -----
 
-A note that introduces a time delay.
+A node that introduces a time delay.
 
 
 | Attribute | Type |
@@ -59,3 +59,13 @@ A node that filters selected frequencies
 | frequency | Audio Param |
 | quality   | Audio Param |
 | type      | lowpass, highpass, bandpass, lowshelf, highshelf, peaking, notch or allpass |
+
+StereoPanner
+------------
+
+A node that pans between the left and right stereo channels.
+
+
+| Attribute | Type |
+| --------- | ---- |
+| pan | Audio Param (-1 <= p <= +1)|

@@ -37,12 +37,23 @@ feedback =
   "Gain feedback { gain 0.8 } [ delay ] \n" <>
   "End"
 
+stereoPan :: String
+stereoPan =
+  "AudioBufferSource abs { url assets/wav/pinknoise.wav, loop true}  [ panner ] \n" <>
+  "StereoPanner panner { pan \n" <>
+  "    [ setValueAtTime -1.0  t + 0.1, \n" <>
+  "      linearRampToValueAtTime 1.0 t +10 \n" <>
+  "    ] } [ gain ] \n" <>
+"Gain gain { gain 0.5 } [ output ] \n" <>
+"End"
+
 samples :: Array String
 samples =
   [ cowbell
   , frequencyModulation
   , audioBuffer
   , feedback
+  , stereoPan
   ]
 
 randomSample :: ∀ eff. Eff (random :: RANDOM | eff) String
