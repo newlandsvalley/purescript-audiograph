@@ -5,9 +5,10 @@ module Audio.Graph.Assembler (assemble) where
 import Audio.Graph
 import Audio.Buffer (AudioBuffers)
 import Audio.Graph.Attributes (setOscillatorAttributes, setAudioBufferSourceAttributes,
-    setGainAttributes, setDelayAttributes, setBiquadFilterAttributes)
+    setGainAttributes, setDelayAttributes, setBiquadFilterAttributes,
+    setStereoPannerAttributes)
 import Audio.WebAudio.AudioContext (createBufferSource, createOscillator, createGain, createBiquadFilter,
-    createDelay, destination, currentTime)
+    createDelay, createStereoPanner, destination, currentTime)
 import Audio.WebAudio.Types (WebAudio, AudioContext, AudioNode(..),  connect, connectParam)
 import Control.Monad.Eff (Eff)
 import Data.Foldable (traverse_, foldM)
@@ -43,6 +44,7 @@ assembleNode ctx buffers ass (NodeDef nd) =
     GainType-> assembleGain ctx ass (NodeDef nd)
     BiquadFilterType-> assembleBiquadFilter ctx ass (NodeDef nd)
     DelayType-> assembleDelay ctx ass (NodeDef nd)
+    StereoPannerType-> assembleStereoPanner ctx ass (NodeDef nd)
 
 -- nodes
 
@@ -99,6 +101,17 @@ assembleDelay ctx ass (NodeDef nd) =
     let
       ass' = insert nd.id (Delay delayNode) ass
     pure ass'
+
+assembleStereoPanner :: ∀ eff. AudioContext -> Assemblage -> NodeDef-> (Eff (wau :: WebAudio | eff) Assemblage)
+assembleStereoPanner ctx ass (NodeDef nd) =
+  trace ("assembling stereo panner id: " <> nd.id) \_ ->
+  do
+    now <- currentTime ctx
+    stereoPannerNode <- createStereoPanner ctx
+    _ <- setStereoPannerAttributes now stereoPannerNode nd.attributes
+    let
+      ass' = insert nd.id (StereoPanner stereoPannerNode) ass
+    pure ass'
 -- connections
 
 -- assemble connections from the node defined in the NodeDef
@@ -147,6 +160,8 @@ setConnection sourceNode ass target =
           connect n targetNode
         Analyser n ->
           connect n targetNode
+        StereoPanner n ->
+          connect n targetNode
         Destination n ->
           connect n targetNode
     _ ->
@@ -174,32 +189,9 @@ setConnectionParam sourceNode ass targetNode param =
           connectParam n targetNode param
         Analyser n ->
           connectParam n targetNode param
+        StereoPanner n ->
+          connectParam n targetNode param
         Destination n ->
           connectParam n targetNode param
     _ ->
       pure unit
-
--- attributes
-{-}
-setOscillatorAttributes :: ∀ eff. OscillatorNode -> AttributeMap -> (Eff (wau :: WebAudio | eff) Unit)
-setOscillatorAttributes osc map = do
-  _ <- setOscillatorTypeAttr osc map
-  setOscillatorFrequencyAttr osc map
-
-setAudioBufferSourceAttributes :: ∀ eff. AudioBufferSourceNode -> AttributeMap -> AudioBuffers -> (Eff (wau :: WebAudio | eff) Unit)
-setAudioBufferSourceAttributes node map buffers = do
-  setAudioBufferAttr node map buffers
-
-setGainAttributes :: ∀ eff. GainNode -> AttributeMap -> (Eff (wau :: WebAudio | eff) Unit)
-setGainAttributes gain map = do
-  setGainAttr gain map
-
-setDelayAttributes :: ∀ eff. DelayNode -> AttributeMap -> (Eff (wau :: WebAudio | eff) Unit)
-setDelayAttributes delayNode map = do
-  setDelayAttr delayNode map
-
-setBiquadFilterAttributes :: ∀ eff. BiquadFilterNode -> AttributeMap -> (Eff (wau :: WebAudio | eff) Unit)
-setBiquadFilterAttributes bqf map = do
-  _ <- setBiquadFilterTypeAttr bqf map
-  setBiquadFilterFrequencyAttr bqf map
--}

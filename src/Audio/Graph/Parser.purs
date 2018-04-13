@@ -58,6 +58,7 @@ audioNode st =
     , gainNode st
     , biquadFilterNode st
     , delayNode st
+    , stereoPannerNode st
     ]
       <?> "audio node"
 
@@ -102,6 +103,14 @@ biquadFilterNodeType =
 delayNodeType :: Parser NodeType
 delayNodeType =
   DelayType <$ keyWord "Delay"
+
+stereoPannerNode :: SymbolTable -> Parser (Tuple NodeDef SymbolTable)
+stereoPannerNode st =
+  buildNode <$> stereoPannerNodeType <*> nodeId st <*> stereoPannerAttributes <*> connections
+
+stereoPannerNodeType :: Parser NodeType
+stereoPannerNodeType =
+  StereoPannerType <$ keyWord "StereoPanner"
 
 nodeId :: SymbolTable -> Parser (Tuple String SymbolTable)
 nodeId st =
@@ -265,14 +274,17 @@ biquadFilterType =
       ]
         <?> "biquad filter type"
 
-
--- gain attributes
-
 -- at the moment we require a delayTime attribute, nothing more
 delayAttributes :: Parser AttributeMap
 delayAttributes =
   (fromFoldable <<< L.singleton) <$>
     (openCurlyBracket *> (audioParamAttribute "delayTime") <* closeCurlyBracket)
+
+-- at the moment we require a pan attribute, nothing more
+stereoPannerAttributes :: Parser AttributeMap
+stereoPannerAttributes =
+  (fromFoldable <<< L.singleton) <$>
+    (openCurlyBracket *> (audioParamAttribute "pan") <* closeCurlyBracket)
 
 
 -- general audio params

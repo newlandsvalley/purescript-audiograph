@@ -4,7 +4,8 @@ module Audio.Graph.Attributes
    getOscillatorType, getNumber, getString, biquadFilterTypeAttr,
    oscillatorTypeAttr, numberAttr, stringAttr, boolAttr, audioParamsAttr,
    setOscillatorAttributes, setAudioBufferSourceAttributes,
-   setGainAttributes, setDelayAttributes, setBiquadFilterAttributes
+   setGainAttributes, setDelayAttributes, setBiquadFilterAttributes,
+   setStereoPannerAttributes
    ) where
 
 -- | Audio node attributes.  These are either simple or consist of
@@ -14,7 +15,7 @@ module Audio.Graph.Attributes
 import Prelude (Unit, ($), (<$>), (<$), (#), (>>=), (<>), (+), id, bind, pure, unit)
 import Control.Monad.Eff (Eff)
 import Audio.WebAudio.Types (WebAudio, OscillatorNode, GainNode, BiquadFilterNode,
-  AudioBufferSourceNode, DelayNode, AudioParam, AudioBuffer)
+  AudioBufferSourceNode, DelayNode, StereoPannerNode, AudioParam, AudioBuffer)
 import Audio.WebAudio.Oscillator (OscillatorType, detune, frequency, setOscillatorType)
 import Audio.WebAudio.BiquadFilterNode (BiquadFilterType, setFilterType,
    filterFrequency, quality)
@@ -23,6 +24,7 @@ import Audio.WebAudio.AudioParam (setValue, setValueAtTime,
   linearRampToValueAtTime, exponentialRampToValueAtTime)
 import Audio.WebAudio.AudioBufferSourceNode (setBuffer, setLoop, setLoopStart, setLoopEnd)
 import Audio.WebAudio.DelayNode (delayTime)
+import Audio.WebAudio.StereoPannerNode (pan)
 import Audio.Buffer (AudioBuffers)
 import Data.Map (Map, insert, lookup)
 import Data.Maybe (Maybe(..), fromMaybe)
@@ -259,6 +261,16 @@ setDelayAttr startTime delayNode map =
         delayParam <- delayTime delayNode
         setParams startTime delayParam ps
 
+setStereoPannerAttr :: ∀ eff. Number -> StereoPannerNode -> AttributeMap -> Eff ( wau :: WebAudio | eff) Unit
+setStereoPannerAttr startTime stereoPannerNode map =
+  case getAudioParams "map" map of
+    Nil ->
+      pure unit
+    ps ->
+      do
+        panParam <- pan stereoPannerNode
+        setParams startTime panParam ps
+
 setAudioBufferAttr :: ∀ eff. AudioBufferSourceNode -> AttributeMap -> AudioBuffers -> Eff ( wau :: WebAudio | eff) Unit
 setAudioBufferAttr audioBufferNode attMap buffers =
   let
@@ -343,6 +355,10 @@ setGainAttributes startTime gain map = do
 setDelayAttributes :: ∀ eff. Number -> DelayNode -> AttributeMap -> (Eff (wau :: WebAudio | eff) Unit)
 setDelayAttributes startTime delayNode map = do
   setDelayAttr startTime delayNode map
+
+setStereoPannerAttributes :: ∀ eff. Number -> StereoPannerNode -> AttributeMap -> (Eff (wau :: WebAudio | eff) Unit)
+setStereoPannerAttributes startTime stereoPannerNode map = do
+  setStereoPannerAttr startTime stereoPannerNode map
 
 setBiquadFilterAttributes :: ∀ eff. Number -> BiquadFilterNode -> AttributeMap -> (Eff (wau :: WebAudio | eff) Unit)
 setBiquadFilterAttributes startTime bqf map = do

@@ -21,11 +21,12 @@ data NodeType =
  | GainType
  | BiquadFilterType
  | DelayType
+ | StereoPannerType
 
 -- | a reference
 data Reference =
    NodeRef NodeId                -- refer to a node
- | ParameterRef NodeId String    -- refer to an audio parameter 
+ | ParameterRef NodeId String    -- refer to an audio parameter
 
 derive instance eqReference :: Eq Reference
 derive instance ordReference :: Ord Reference
