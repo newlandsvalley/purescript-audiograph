@@ -47,6 +47,19 @@ stereoPan =
 "Gain gain { gain 0.5 } [ output ] \n" <>
 "End"
 
+dynamicsCompression :: String
+dynamicsCompression =
+  "AudioBufferSource abs { url assets/wav/pinknoise.wav, loop true}  [ compressor ] \n" <>
+  "DynamicsCompressor compressor { \n" <>
+  "  threshold  [ setValueAtTime -50  t + 2  ] , \n" <>
+  "  knee  [ setValueAtTime 40  t + 2  ] , \n" <>
+  "  ratio  [ setValueAtTime 12  t + 2  ] , \n" <>
+  "  attack  [ setValueAtTime 0  t + 2  ] , \n" <>
+  "  release  [ setValueAtTime 0.25  t + 2  ] \n" <>
+  "} [ gain ] \n" <>
+  "Gain gain { gain 0.5 } [ output ] \n" <>
+  "End"
+
 samples :: Array String
 samples =
   [ cowbell
@@ -54,6 +67,7 @@ samples =
   , audioBuffer
   , feedback
   , stereoPan
+  , dynamicsCompression
   ]
 
 randomSample :: ∀ eff. Eff (random :: RANDOM | eff) String
