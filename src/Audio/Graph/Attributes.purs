@@ -263,7 +263,7 @@ setDelayAttr startTime delayNode map =
 
 setStereoPannerAttr :: ∀ eff. Number -> StereoPannerNode -> AttributeMap -> Eff ( wau :: WebAudio | eff) Unit
 setStereoPannerAttr startTime stereoPannerNode map =
-  case getAudioParams "map" map of
+  case getAudioParams "pan" map of
     Nil ->
       pure unit
     ps ->
