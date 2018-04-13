@@ -57,6 +57,11 @@ basicSuite =
                       "BiquadFilter id2 { frequency 400 } [ id1 ] " <>
                       "Gain id1 { gain 2 } [ output ] " <>
                       "End")
+    test "3 nodes with Dynamics Compressor" do
+      assertCompiles ( "AudioBufferSource abs { url noise.wav, loop true}  [ compressor ] " <>
+                       "DynamicsCompressor compressor { threshold -20 } [ gain ]" <>
+                       "Gain gain { gain 2 } [ output ] " <>
+                       "End")
     test "1 gain audio param" do
       assertCompiles ("Gain id1 { gain [ setValue 2 ] } [ output ] End")
     test "2 gain audio params" do
