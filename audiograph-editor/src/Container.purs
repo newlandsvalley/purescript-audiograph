@@ -118,7 +118,7 @@ component ctx =
   render state = HH.div_
     [ HH.h1
       [HP.class_ (H.ClassName "center") ]
-      [HH.text "PureScript AudioGraph Editor"]
+      [HH.text "Web-Audio AudioGraph Editor"]
     , HH.div
       -- left pane
       [ HP.class_ (H.ClassName "leftPane") ]

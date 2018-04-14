@@ -88,7 +88,7 @@ A node that which lowers the volume of the loudest parts of the signal in order 
 Convolver
 ---------
 
-A node that introduces reverb by mixing in 'impulse' dyanamics of an audio buffer that may represent, for example, the hall where the sounds are played.
+A node that introduces reverb by mixing in 'impulse' dyanamics from an audio buffer that may represent, for example, the hall where the sounds are played.
 
 
 | Attribute | Type |
