@@ -85,3 +85,14 @@ A node that which lowers the volume of the loudest parts of the signal in order 
 | attack | Audio Param (0 <= p <= 1)|
 | release | Audio Param (0 <= p <= 1)|
 
+Convolver
+---------
+
+A node that introduces reverb by mixing in 'impulse' dyanamics of an audio buffer that may represent, for example, the hall where the sounds are played.
+
+
+| Attribute | Type |
+| --------- | ---- |
+| url | String |
+| normalize | Boolean |
+

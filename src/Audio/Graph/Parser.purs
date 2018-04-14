@@ -33,7 +33,6 @@ initialSymbolTable :: SymbolTable
 initialSymbolTable =
   { nodeNames : Set.singleton("output") }
 
-
 audioNodes :: SymbolTable -> Parser (Tuple AudioGraph SymbolTable)
 audioNodes st =
   audioNode st >>= (\state -> moreNodesOrEnd state)
@@ -60,6 +59,7 @@ audioNode st =
     , delayNode st
     , stereoPannerNode st
     , dynamicsCompressorNode st
+    , convolverNode st
     ]
       <?> "audio node"
 
@@ -79,7 +79,6 @@ gainNode st =
 biquadFilterNode :: SymbolTable -> Parser (Tuple NodeDef SymbolTable)
 biquadFilterNode st =
   buildNode <$> biquadFilterNodeType <*> nodeId st <*> biquadFilterAttributes <*> connections
-
 
 oscillatorNodeType :: Parser NodeType
 oscillatorNodeType =
@@ -120,6 +119,14 @@ dynamicsCompressorNode st =
 dynamicsCompressorNodeType :: Parser NodeType
 dynamicsCompressorNodeType =
   DynamicsCompressorType <$ keyWord "DynamicsCompressor"
+
+convolverNode :: SymbolTable -> Parser (Tuple NodeDef SymbolTable)
+convolverNode st =
+  buildNode <$> convolverNodeType <*> nodeId st <*> convolverAttributes <*> connections
+
+convolverNodeType :: Parser NodeType
+convolverNodeType =
+  ConvolverType <$ keyWord "Convolver"
 
 nodeId :: SymbolTable -> Parser (Tuple String SymbolTable)
 nodeId st =
@@ -314,6 +321,25 @@ dynamicsCompressorAttributeList =
       , audioParamAttribute "release"
       ]
     ) comma
+
+convolverAttributes:: Parser AttributeMap
+convolverAttributes =
+  fromFoldable <$>
+    (openCurlyBracket *> convolverAttributeList <* closeCurlyBracket)
+
+convolverAttributeList :: Parser (List (Tuple String AudioAttribute))
+convolverAttributeList =
+  sepBy
+    (choice
+      [
+        urlAttribute
+      , normalizeAttribute
+      ]
+    ) comma
+
+normalizeAttribute :: Parser (Tuple String AudioAttribute)
+normalizeAttribute =
+  Tuple <$> keyWord "normalize" <*> boolAttribute
 
 -- general audio params
 

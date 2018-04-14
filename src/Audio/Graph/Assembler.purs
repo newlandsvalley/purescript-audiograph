@@ -6,8 +6,10 @@ import Audio.Graph
 import Audio.Buffer (AudioBuffers)
 import Audio.Graph.Attributes (setOscillatorAttributes, setAudioBufferSourceAttributes,
     setGainAttributes, setDelayAttributes, setBiquadFilterAttributes,
-    setStereoPannerAttributes, setDynamicsCompressorAttributes)
-import Audio.WebAudio.AudioContext (createBufferSource, createOscillator, createGain, createBiquadFilter,
+    setStereoPannerAttributes, setDynamicsCompressorAttributes,
+    setConvolverAttributes)
+import Audio.WebAudio.AudioContext (createBufferSource, createOscillator,
+    createGain, createBiquadFilter, createConvolver,
     createDelay, createStereoPanner, createDynamicsCompressor, destination, currentTime)
 import Audio.WebAudio.Types (WebAudio, AudioContext, AudioNode(..),  connect, connectParam)
 import Control.Monad.Eff (Eff)
@@ -46,6 +48,7 @@ assembleNode ctx buffers ass (NodeDef nd) =
     DelayType-> assembleDelay ctx ass (NodeDef nd)
     StereoPannerType-> assembleStereoPanner ctx ass (NodeDef nd)
     DynamicsCompressorType-> assembleDynamicsCompressor ctx ass (NodeDef nd)
+    ConvolverType -> assembleConvolver ctx ass buffers (NodeDef nd)
 
 -- nodes
 
@@ -124,6 +127,17 @@ assembleDynamicsCompressor ctx ass (NodeDef nd) =
     let
       ass' = insert nd.id (DynamicsCompressor dynamicsCompressorNode) ass
     pure ass'
+
+assembleConvolver :: ∀ eff. AudioContext -> Assemblage -> AudioBuffers -> NodeDef-> (Eff (wau :: WebAudio | eff) Assemblage)
+assembleConvolver ctx ass buffers (NodeDef nd) =
+  trace ("assembling convolver id: " <> nd.id) \_ ->
+  do
+    convolverNode <- createConvolver ctx
+    _ <- setConvolverAttributes convolverNode nd.attributes buffers
+    let
+      ass' = insert nd.id (Convolver convolverNode) ass
+    pure ass'
+
 -- connections
 
 -- assemble connections from the node defined in the NodeDef
@@ -176,6 +190,8 @@ setConnection sourceNode ass target =
           connect n targetNode
         DynamicsCompressor n ->
           connect n targetNode
+        Convolver n ->
+          connect n targetNode
         Destination n ->
           connect n targetNode
     _ ->
@@ -206,6 +222,8 @@ setConnectionParam sourceNode ass targetNode param =
         StereoPanner n ->
           connectParam n targetNode param
         DynamicsCompressor n ->
+          connectParam n targetNode param
+        Convolver n ->
           connectParam n targetNode param
         Destination n ->
           connectParam n targetNode param

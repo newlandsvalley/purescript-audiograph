@@ -8,7 +8,7 @@ Try it out [here](http://www.tradtunedb.org.uk:8602/).
 Level of support for Web-Audio
 ------------------------------
 
-Eight nodes are supported at the moment - an implicit __destination__ (output), __Oscillator__, __AudioBufferSource__, __BiquadFilter__, __Delay__, __Gain__, __StereoPanner__ and __DynamicsCompressor__. This includes all the nodes completed in Chris Watersons original [purescript-webaudio](https://github.com/waterson/purescript-webaudio) library together with a handful of further ones from my port of that library. Full details are given [here](https://github.com/newlandsvalley/purescript-audiograph/blob/master/NODES.md).
+The following nodes are supported at the moment - an implicit __destination__ (output), __Oscillator__, __AudioBufferSource__, __BiquadFilter__, __Delay__, __Gain__, __StereoPanner__, __Convolver__ and __DynamicsCompressor__. This includes all the nodes completed in Chris Watersons original [purescript-webaudio](https://github.com/waterson/purescript-webaudio) library together with a handful of further ones from my port of that library. Full details are given [here](https://github.com/newlandsvalley/purescript-audiograph/blob/master/NODES.md).
 
 
 Examples

@@ -7,7 +7,8 @@ import Audio.Buffer (AudioBuffers)
 import Audio.WebAudio.AudioContext (currentTime)
 import Audio.Graph.Attributes (setOscillatorAttributes, setAudioBufferSourceAttributes,
   setGainAttributes, setDelayAttributes, setBiquadFilterAttributes,
-  setStereoPannerAttributes, setDynamicsCompressorAttributes)
+  setStereoPannerAttributes, setDynamicsCompressorAttributes,
+  setConvolverAttributes)
 import Audio.WebAudio.Types (WebAudio, AudioContext, AudioNode(..))
 import Control.Monad.Eff (Eff)
 import Data.Foldable (traverse_)
@@ -36,6 +37,7 @@ updateNode startTime buffers ass (NodeDef nd) =
     DelayType-> updateDelay startTime ass (NodeDef nd)
     StereoPannerType-> updateStereoPanner startTime ass (NodeDef nd)
     DynamicsCompressorType -> updateDynamicsCompressor startTime ass (NodeDef nd)
+    ConvolverType -> updateConvolver ass buffers (NodeDef nd)
 
 -- nodes
 
@@ -120,5 +122,17 @@ updateDynamicsCompressor startTime ass (NodeDef nd) =
     case mNode of
       Just (DynamicsCompressor node) ->
         setDynamicsCompressorAttributes startTime node nd.attributes
+      _ ->
+        pure unit
+
+updateConvolver:: ∀ eff. Assemblage -> AudioBuffers -> NodeDef-> (Eff (wau :: WebAudio | eff) Unit)
+updateConvolver ass buffers (NodeDef nd) =
+  trace ("updating convolver id: " <> nd.id) \_ ->
+  let
+    mNode = lookup nd.id ass
+  in
+    case mNode of
+      Just (Convolver node) ->
+        setConvolverAttributes node nd.attributes buffers
       _ ->
         pure unit

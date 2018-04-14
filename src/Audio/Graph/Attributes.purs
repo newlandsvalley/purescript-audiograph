@@ -5,7 +5,8 @@ module Audio.Graph.Attributes
    oscillatorTypeAttr, numberAttr, stringAttr, boolAttr, audioParamsAttr,
    setOscillatorAttributes, setAudioBufferSourceAttributes,
    setGainAttributes, setDelayAttributes, setBiquadFilterAttributes,
-   setStereoPannerAttributes, setDynamicsCompressorAttributes
+   setStereoPannerAttributes, setDynamicsCompressorAttributes,
+   setConvolverAttributes
    ) where
 
 -- | Audio node attributes.  These are either simple or consist of
@@ -15,7 +16,7 @@ module Audio.Graph.Attributes
 import Prelude (Unit, ($), (<$>), (<$), (#), (>>=), (<>), (+), id, bind, pure, unit)
 import Control.Monad.Eff (Eff)
 import Audio.WebAudio.Types (WebAudio, OscillatorNode, GainNode, BiquadFilterNode,
-  AudioBufferSourceNode, DelayNode, StereoPannerNode,
+  AudioBufferSourceNode, DelayNode, StereoPannerNode, ConvolverNode,
   DynamicsCompressorNode, AudioParam, AudioBuffer)
 import Audio.WebAudio.Oscillator (OscillatorType, detune, frequency, setOscillatorType)
 import Audio.WebAudio.BiquadFilterNode (BiquadFilterType, setFilterType,
@@ -27,6 +28,7 @@ import Audio.WebAudio.AudioBufferSourceNode (setBuffer, setLoop, setLoopStart, s
 import Audio.WebAudio.DelayNode (delayTime)
 import Audio.WebAudio.StereoPannerNode (pan)
 import Audio.WebAudio.DynamicsCompressorNode (threshold, knee, ratio, attack, release)
+import Audio.WebAudio.ConvolverNode (setBuffer, normalize) as Convolver
 import Audio.Buffer (AudioBuffers)
 import Data.Map (Map, insert, lookup)
 import Data.Maybe (Maybe(..), fromMaybe)
@@ -341,6 +343,28 @@ setAudioBufferLoopEndAttr node map =
     _ ->
       pure unit
 
+setConvolverBufferAttr :: ∀ eff. ConvolverNode -> AttributeMap -> AudioBuffers -> Eff ( wau :: WebAudio | eff) Unit
+setConvolverBufferAttr convolverNode attMap buffers =
+  let
+    maybeBuffer :: Maybe AudioBuffer
+    maybeBuffer = (getString "url" attMap) >>= (\url -> lookup url buffers)
+  in
+    case maybeBuffer of
+      Nothing ->
+        trace "convolver buffer not loaded" \_ ->
+        pure unit
+      Just buffer ->
+        trace "convolver buffer loaded" \_ ->
+        Convolver.setBuffer buffer convolverNode
+
+setConvolverNormalizeAttr :: ∀ eff. ConvolverNode-> AttributeMap -> Eff ( wau :: WebAudio | eff) Unit
+setConvolverNormalizeAttr node map =
+  case getBool "normalize" map of
+    Just b ->
+      Convolver.normalize b node
+    _ ->
+      pure unit
+
 -- | set a list of audio parameters
 setParams :: ∀ eff. Number -> AudioParam -> List AudioParamDef -> Eff ( wau :: WebAudio | eff) Unit
 setParams startTime param paramDefs =
@@ -402,6 +426,10 @@ setDynamicsCompressorAttributes startTime dynamicsCompressorNode map = do
   _ <- setCompressorParam startTime dynamicsCompressorNode "release" release map
   pure unit
 
+setConvolverAttributes :: ∀ eff. ConvolverNode -> AttributeMap -> AudioBuffers -> (Eff (wau :: WebAudio | eff) Unit)
+setConvolverAttributes node map buffers = do
+  _ <- setConvolverBufferAttr node map buffers
+  setConvolverNormalizeAttr node map
 
 setBiquadFilterAttributes :: ∀ eff. Number -> BiquadFilterNode -> AttributeMap -> (Eff (wau :: WebAudio | eff) Unit)
 setBiquadFilterAttributes startTime bqf map = do

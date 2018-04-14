@@ -100,6 +100,8 @@ basicSuite =
     test "dynamics compressor - many and complex" do
       assertCompiles ("DynamicsCompressor id1 { threshold -20," <>
         "knee [setValueAtTime 2 30 ], ratio [ setValueAtTime 2 10 ] } [ output ] End")
+    test "convolver" do
+      assertCompiles ("Convolver id1 { url  wav/hall.wav, normalize true } [ output ] End")
     test "connect to param" do
       assertCompiles ("Oscillator modulator { frequency 0.8 } [ gain1 ]" <>
                       "Oscillator carrier { frequency 300.0 } [ output ]" <>

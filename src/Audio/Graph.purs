@@ -23,6 +23,7 @@ data NodeType =
  | DelayType
  | StereoPannerType
  | DynamicsCompressorType
+ | ConvolverType
 
 -- | a reference
 data Reference =
