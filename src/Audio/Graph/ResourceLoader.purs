@@ -53,10 +53,13 @@ loadNodeBuffer ctx (NodeDef nd) =
   case nd.nodeType of
     AudioBufferSourceType ->
       do
-        singleton <$> loadAudioSourceBuffer ctx (NodeDef nd)
+        singleton <$> loadBufferUrl ctx (NodeDef nd)
+    ConvolverType ->
+      do
+        singleton <$> loadBufferUrl ctx (NodeDef nd)
     _ -> pure $ Nil
 
-loadAudioSourceBuffer :: ∀ eff.
+loadBufferUrl :: ∀ eff.
   AudioContext
   -> NodeDef
   -> Aff
@@ -65,7 +68,7 @@ loadAudioSourceBuffer :: ∀ eff.
       | eff
       )
       (Either String (Tuple String AudioBuffer))
-loadAudioSourceBuffer ctx (NodeDef nd) =
+loadBufferUrl ctx (NodeDef nd) =
   case getString "url" nd.attributes of
     Nothing ->
       pure $ Left "no URL attribute"
