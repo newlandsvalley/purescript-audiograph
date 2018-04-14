@@ -60,6 +60,14 @@ dynamicsCompression =
   "Gain gain { gain 0.5 } [ output ] \n" <>
   "End"
 
+convolver :: String
+convolver =
+  "AudioBufferSource id2 { url https://raw.githubusercontent.com/borismus/webaudioapi.com/master/content/posts/audio-tag/chrono.mp3 \n" <>
+  ", loop true}  [ gain ] \n" <>
+  "Gain gain { gain 2 } [ conv ] \n" <>
+  "Convolver conv { url assets/ogg/irHall.ogg } [ output ] \n" <>
+  "End"
+
 samples :: Array String
 samples =
   [ cowbell
@@ -68,6 +76,7 @@ samples =
   , feedback
   , stereoPan
   , dynamicsCompression
+  , convolver
   ]
 
 randomSample :: ∀ eff. Eff (random :: RANDOM | eff) String
