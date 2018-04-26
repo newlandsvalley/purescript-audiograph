@@ -5,8 +5,8 @@ module Audio.Graph.ResourceLoader (loadBuffers) where
 import Audio.Graph (AudioGraph, NodeDef(..), NodeType(..))
 import Audio.Buffer (AudioBuffers)
 import Audio.Graph.Attributes (getString)
-import Audio.WebAudio.AudioContext (decodeAudioDataAsync)
-import Audio.WebAudio.Types (WebAudio, AudioContext, AudioBuffer)
+import Audio.WebAudio.BaseAudioContext (decodeAudioDataAsync)
+import Audio.WebAudio.Types (AUDIO, AudioContext, AudioBuffer)
 import Control.Monad.Aff (Aff)
 import Data.Either (Either(..), either)
 import Data.HTTP.Method (Method(..))
@@ -29,7 +29,7 @@ loadBuffers :: ∀ eff.
   -> AudioGraph
   -> Aff
       ( ajax :: AJAX
-      , wau :: WebAudio
+      , audio :: AUDIO
       | eff
       )
       (Either String AudioBuffers)
@@ -45,7 +45,7 @@ loadNodeBuffer :: ∀ eff.
   -> NodeDef
   -> Aff
       ( ajax :: AJAX
-      , wau :: WebAudio
+      , audio :: AUDIO
       | eff
       )
       (List (Either String (Tuple String AudioBuffer)))
@@ -64,7 +64,7 @@ loadBufferUrl :: ∀ eff.
   -> NodeDef
   -> Aff
       ( ajax :: AJAX
-      , wau :: WebAudio
+      , audio :: AUDIO
       | eff
       )
       (Either String (Tuple String AudioBuffer))
@@ -81,7 +81,7 @@ loadSoundBuffer :: ∀ eff.
   -> String
   -> Aff
      ( ajax :: AJAX
-     , wau :: WebAudio
+     , audio :: AUDIO
      | eff
      )
      (Either String (Tuple String AudioBuffer))

@@ -9,14 +9,14 @@ import Data.Map (empty)
 import Audio.Graph.ResourceLoader (loadBuffers)
 import Audio.Graph.Assembler (assemble)
 import Audio.Graph (AudioGraph, Assemblage)
-import Audio.WebAudio.Types (WebAudio, AudioContext)
+import Audio.WebAudio.Types (AUDIO, AudioContext)
 import Prelude (($), id, bind, pure)
 
 -- | build an assemblage from an audio graph
 build :: ∀ eff.
   AudioContext
   -> AudioGraph
-  -> Aff (ajax :: AJAX, wau :: WebAudio | eff) (Either String Assemblage)
+  -> Aff (ajax :: AJAX, audio :: AUDIO | eff) (Either String Assemblage)
 build ctx graph =
   do
     -- attempt to load any sound buffers from the specified URLs
