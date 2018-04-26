@@ -11,8 +11,8 @@ import Data.Map (empty)
 import Data.Time.Duration (Milliseconds(..))
 
 
-import Audio.WebAudio.Types (WebAudio, AudioContext)
-import Audio.WebAudio.AudioContext (makeAudioContext)
+import Audio.WebAudio.Types (AUDIO, AudioContext)
+import Audio.WebAudio.BaseAudioContext (newAudioContext)
 import Audio.Graph (AudioGraph, Assemblage)
 import Audio.Graph.Compiler (compile, compileUpdate)
 import Audio.Graph.Parser (PositionedParseError(..))
@@ -21,15 +21,15 @@ import Audio.Graph.Builder (build)
 import Audio.Graph.Updater (update)
 
 
-main :: forall e. Eff (ajax :: AJAX, console :: CONSOLE, wau :: WebAudio | e) Unit
+main :: forall e. Eff (ajax :: AJAX, console :: CONSOLE, audio :: AUDIO | e) Unit
 main = do
-    ctx <- makeAudioContext
+    ctx <- newAudioContext
     _ <- launchAff $ play ctx 3.0 example3
     -- _ <- launchAff $ startThenUpdate ctx 2.0 example1 example1Update
     pure unit
 
 play :: forall e. AudioContext -> Number -> String
-     -> Aff (ajax :: AJAX, console :: CONSOLE, wau :: WebAudio | e) Unit
+     -> Aff (ajax :: AJAX, console :: CONSOLE, audio :: AUDIO | e) Unit
 play ctx duration text =
   let
     audioGraph=
@@ -44,7 +44,7 @@ play ctx duration text =
           liftEff' $ either (\err -> log ("load error: " <> err)) (startThenStop 0.0 duration) assemblage
 
 startThenUpdate :: forall e. AudioContext -> Number -> String -> String
-     -> Aff (ajax :: AJAX, console :: CONSOLE, wau :: WebAudio | e) Unit
+     -> Aff (ajax :: AJAX, console :: CONSOLE, audio :: AUDIO | e) Unit
 startThenUpdate ctx duration text updateText =
   let
     audioGraph=
@@ -63,7 +63,7 @@ startThenUpdate ctx duration text updateText =
           either (\err -> liftEff' $ log ("load error: " <> err))
                  (\assemblage -> updateSequence ctx duration assemblage graphChange) eassemblage
 
-updateSequence :: ∀ eff. AudioContext -> Number -> Assemblage -> AudioGraph -> Aff (wau :: WebAudio | eff) Unit
+updateSequence :: ∀ eff. AudioContext -> Number -> Assemblage -> AudioGraph -> Aff (audio :: AUDIO | eff) Unit
 updateSequence ctx duration assemblage graphChange = do
   _ <- liftEff' $ start 0.0 assemblage
   _ <- delay (Milliseconds 1000.0)

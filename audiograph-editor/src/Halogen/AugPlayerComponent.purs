@@ -28,9 +28,9 @@ import Halogen.HTML.Properties as HP
 import Audio.Graph (AudioGraph, Assemblage)
 import Audio.Graph.Control (start, stop) as Control
 import Audio.Graph.Builder (build)
-import Audio.WebAudio.Types (WebAudio, AudioContext)
+import Audio.WebAudio.Types (AUDIO, AudioContext)
 
-type PlayerEffects eff = (ajax :: AJAX, wau :: WebAudio | eff)
+type PlayerEffects eff = (ajax :: AJAX, audio :: AUDIO| eff)
 
 type Input = AudioGraph
 

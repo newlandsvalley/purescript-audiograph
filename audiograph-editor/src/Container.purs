@@ -3,7 +3,7 @@ module Container where
 import Prelude
 
 
-import Audio.WebAudio.Types (WebAudio, AudioContext)
+import Audio.WebAudio.Types (AUDIO, AudioContext)
 import Audio.Graph (AudioGraph)
 import Control.Monad.Aff (Aff)
 import Data.Either (Either(..), either)
@@ -27,7 +27,7 @@ import Control.Monad.Eff.Random (RANDOM)
 import SampleText (randomSample)
 
 
-type AppEffects eff = (ajax :: AJAX, wau :: WebAudio, fileio :: FILEIO, random :: RANDOM | eff)
+type AppEffects eff = (ajax :: AJAX, audio :: AUDIO, fileio :: FILEIO, random :: RANDOM | eff)
 
 type State =
   { ctx :: AudioContext
@@ -153,7 +153,7 @@ component ctx =
     ]
 
   -- the play button is visible if we can parse the audiograph
-  renderPlayButton ::  ∀ eff1. State -> H.ParentHTML Query ChildQuery ChildSlot (Aff (ajax :: AJAX, wau :: WebAudio | eff1))
+  renderPlayButton ::  ∀ eff1. State -> H.ParentHTML Query ChildQuery ChildSlot (Aff (ajax :: AJAX, audio :: AUDIO| eff1))
   renderPlayButton state =
     case state.graphResult of
       Right audioGraph ->
