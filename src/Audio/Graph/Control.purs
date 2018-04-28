@@ -1,8 +1,6 @@
 module Audio.Graph.Control (start, stop, startThenStop) where
 
 -- | control the starting and stopping of an audio assemblage
--- | this will eventually be extended to include modifications to
--- | a running assemblage (if we can)
 
 import Prelude (Unit, bind, pure, unit)
 import Control.Monad.Eff (Eff)

@@ -70,6 +70,8 @@ basicSuite =
       assertCompiles ("Gain id1 { gain [ setValue 1, setValueAtTime 3 2, linearRampToValueAtTime 6 4 ] } [ output ] End")
     test "relative times in audio params" do
       assertCompiles ("Gain id1 { gain [ setValue 1, setValueAtTime 3 t + 2, linearRampToValueAtTime 6 t +4 ] } [ output ] End")
+    test "setTargetAtTime" do
+      assertCompiles ("Gain id1 { gain [ setTargetAtTime 2 0.5 0.7 ] } [ output ] End")
     test "oscillator type" do
       assertCompiles ("Oscillator id1 { type square } [ output ] End")
     test "oscillator detune" do

@@ -1,6 +1,6 @@
 module Audio.Graph.Updater (update) where
 
--- | Assemble an Audio Graph definition into a working assemblage of audio nodes
+-- | Assemble an Audio Graph update definition into a working assemblage of audio node deltas
 
 import Audio.Graph
 import Audio.Buffer (AudioBuffers)

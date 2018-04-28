@@ -365,6 +365,7 @@ audioParam =
     [
       setValueAtTime  -- must come before setValue to remove ambiguity
     , setValue
+    , setTargetAtTime
     , linearRampToValueAtTime
     , exponentialRampToValueAtTime
     ]
@@ -378,6 +379,12 @@ setValueAtTime =
   SetValueAtTime <$> ((keyWord "setValueAtTime") *>
     number) <*> time
     <?> "setValueAtTime"
+
+setTargetAtTime :: Parser AudioParamDef
+setTargetAtTime =
+  SetTargetAtTime <$> ((keyWord "setTargetAtTime") *>
+    number) <*> time <*> time
+    <?> "setTargetAtTime"    
 
 linearRampToValueAtTime :: Parser AudioParamDef
 linearRampToValueAtTime  =

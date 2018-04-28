@@ -71,7 +71,7 @@ Each line defines a new Audio node in the graph starting with the node type and 
 Audio Params
 ------------
 
-These may be _setValue_, _setValueAtTime_, _linearRampToValueAtTime_ or  _exponentialRampToValueAtTime_. The params which mention time use a final parameter to represent the time (in seconds) which is either a simple number (absolute javascript time) or which takes the form _t + n_ (time relative to the AudioContext start time).
+These may be _setValue_, _setValueAtTime_, _setTargetAtTime_, _linearRampToValueAtTime_ or  _exponentialRampToValueAtTime_. The params which mention time use a parameter to represent the time (in seconds) which is either a simple number (absolute javascript time) or which takes the form _t + n_ (time relative to the AudioContext start time).
 
 Updates
 -------

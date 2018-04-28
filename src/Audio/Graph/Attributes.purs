@@ -22,7 +22,7 @@ import Audio.WebAudio.Oscillator (OscillatorType, detune, frequency, setOscillat
 import Audio.WebAudio.BiquadFilterNode (BiquadFilterType, setFilterType,
    filterFrequency, quality)
 import Audio.WebAudio.GainNode (gain)
-import Audio.WebAudio.AudioParam (setValue, setValueAtTime,
+import Audio.WebAudio.AudioParam (setValue, setValueAtTime, setTargetAtTime,
   linearRampToValueAtTime, exponentialRampToValueAtTime)
 import Audio.WebAudio.AudioBufferSourceNode (setBuffer, setLoop, setLoopStart, setLoopEnd)
 import Audio.WebAudio.DelayNode (delayTime)
@@ -60,6 +60,7 @@ data Time =
 data AudioParamDef =
     SetValue Number
   | SetValueAtTime Number Time
+  | SetTargetAtTime Number Time Time
   | LinearRampToValueAtTime Number Time
   | ExponentialRampToValueAtTime Number Time
 
@@ -380,6 +381,14 @@ setParam startTime param paramDef =
       setValueAtTime n t param
     SetValueAtTime n (Relative t) ->
       setValueAtTime n (startTime + t) param
+    SetTargetAtTime n (Absolute t1) (Absolute t2) ->
+      setTargetAtTime n t1 t2 param
+    SetTargetAtTime n (Relative t1) (Relative t2) ->
+      setTargetAtTime n (startTime + t1) (startTime + t2) param
+    SetTargetAtTime n (Absolute t1) (Relative t2) ->
+      setTargetAtTime n t1 (startTime + t2) param
+    SetTargetAtTime n (Relative t1) (Absolute t2) ->
+      setTargetAtTime n (startTime + t1) t2 param
     LinearRampToValueAtTime n (Absolute t)->
       linearRampToValueAtTime n t param
     LinearRampToValueAtTime n (Relative t)->
