@@ -3,8 +3,9 @@ module Audio.Graph.Parser (PositionedParseError(..), SymbolTable, parse) where
 -- | Parse a web-audio-graph DSL
 
 import Audio.Graph (AudioGraph, NodeType(..), NodeDef(..), Reference(..))
-import Audio.Graph.Attributes (AudioAttribute, AttributeMap, AudioParamDef(..), Time(..),
-  oscillatorTypeAttr, numberAttr, stringAttr, boolAttr, audioParamsAttr, biquadFilterTypeAttr)
+import Audio.Graph.Attributes (AudioAttribute, AttributeMap, AudioParamDef(..),
+  Time(..), TimeConstant, oscillatorTypeAttr, numberAttr, stringAttr, boolAttr,
+  audioParamsAttr, biquadFilterTypeAttr)
 import Audio.WebAudio.BiquadFilterNode (readBiquadFilterType)
 import Audio.WebAudio.Oscillator (readOscillatorType)
 import Control.Alt ((<|>))
@@ -383,8 +384,8 @@ setValueAtTime =
 setTargetAtTime :: Parser AudioParamDef
 setTargetAtTime =
   SetTargetAtTime <$> ((keyWord "setTargetAtTime") *>
-    number) <*> time <*> time
-    <?> "setTargetAtTime"    
+    number) <*> time <*> timeConstant
+    <?> "setTargetAtTime"
 
 linearRampToValueAtTime :: Parser AudioParamDef
 linearRampToValueAtTime  =
@@ -432,9 +433,15 @@ number :: Parser Number
 number =
   numberOrInt <* skipSpaces
 
+-- an audio paramater time which can be either absolute or relative
 time :: Parser Time
 time =
   relativeTime <|> absoluteTime
+
+-- an audio parameter time which can only be absolute (constant)
+timeConstant :: Parser TimeConstant
+timeConstant =
+  number <* skipSpaces
 
 -- absolute time is javascript time
 absoluteTime :: Parser Time

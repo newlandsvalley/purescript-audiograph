@@ -1,5 +1,5 @@
 module Audio.Graph.Attributes
-  (AudioAttribute, AttributeMap, AudioParamDef(..), Time(..),
+  (AudioAttribute, AttributeMap, AudioParamDef(..), Time(..), TimeConstant,
    addOscillatorType, addFrequency,
    getOscillatorType, getNumber, getString, biquadFilterTypeAttr,
    oscillatorTypeAttr, numberAttr, stringAttr, boolAttr, audioParamsAttr,
@@ -50,17 +50,20 @@ type AudioAttribute = Variant ( oscillatorType :: OscillatorType
 -- | a map of a set of such (named) attributes
 type AttributeMap = Map String AudioAttribute
 
-
+-- | a time in an audio parameter which can either be absolute or relative
 data Time =
     Absolute Number
   | Relative Number
+
+-- | a time in an audio parameter which must be an absolute constant value
+type TimeConstant = Number
 
 -- | an AudioParam definition
 -- | see https://developer.mozilla.org/en-US/docs/Web/API/AudioParam
 data AudioParamDef =
     SetValue Number
   | SetValueAtTime Number Time
-  | SetTargetAtTime Number Time Time
+  | SetTargetAtTime Number Time TimeConstant
   | LinearRampToValueAtTime Number Time
   | ExponentialRampToValueAtTime Number Time
 
@@ -381,13 +384,9 @@ setParam startTime param paramDef =
       setValueAtTime n t param
     SetValueAtTime n (Relative t) ->
       setValueAtTime n (startTime + t) param
-    SetTargetAtTime n (Absolute t1) (Absolute t2) ->
+    SetTargetAtTime n (Absolute t1) t2 ->
       setTargetAtTime n t1 t2 param
-    SetTargetAtTime n (Relative t1) (Relative t2) ->
-      setTargetAtTime n (startTime + t1) (startTime + t2) param
-    SetTargetAtTime n (Absolute t1) (Relative t2) ->
-      setTargetAtTime n t1 (startTime + t2) param
-    SetTargetAtTime n (Relative t1) (Absolute t2) ->
+    SetTargetAtTime n (Relative t1) t2 ->
       setTargetAtTime n (startTime + t1) t2 param
     LinearRampToValueAtTime n (Absolute t)->
       linearRampToValueAtTime n t param
