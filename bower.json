@@ -13,7 +13,7 @@
     "purescript-string-parsers": "^3.1.0",
     "purescript-variant": "^4.0.0",
     "purescript-affjax": "^5.0.0",
-    "purescript-webaudio": "https://github.com/newlandsvalley/purescript-webaudio.git#sync1"
+    "purescript-webaudio": "https://github.com/newlandsvalley/purescript-webaudio.git"
   },
   "devDependencies": {
     "purescript-psci-support": "^3.0.0",
