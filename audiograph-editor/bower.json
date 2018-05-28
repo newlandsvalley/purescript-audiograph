@@ -15,8 +15,8 @@
     "purescript-random": "^3.0.0",
     "purescript-soundfonts": "^2.0.0",
     "purescript-js-fileio": "https://github.com/newlandsvalley/purescript-js-fileio.git#1.0.2",
-    "purescript-halogen-components": "https://github.com/newlandsvalley/purescript-halogen-components.git",
-    "purescript-audiograph": "https://github.com/newlandsvalley/purescript-audiograph.git"
+    "purescript-halogen-components": "https://github.com/newlandsvalley/purescript-halogen-components.git#0.1.0",
+    "purescript-audiograph": "https://github.com/newlandsvalley/purescript-audiograph.git#0.1.0"
   },
   "devDependencies": {
     "purescript-psci-support": "^3.0.0"
