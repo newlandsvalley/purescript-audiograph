@@ -13,6 +13,7 @@ import Data.Either (Either)
 import Data.Int (toNumber)
 import Data.List (List(..), (:))
 import Data.List (singleton) as L
+import Data.List.NonEmpty (toList)
 import Data.Map (empty, fromFoldable)
 import Data.Bifunctor (bimap)
 import Data.Set (Set, fromFoldable, insert, member, singleton) as Set
@@ -144,7 +145,7 @@ connections =
 
 connectionList :: Parser (List Reference)
 connectionList =
-  sepBy1 connection (string "," <* skipSpaces)
+  toList <$> sepBy1 connection (string "," <* skipSpaces)
 
 connection :: Parser Reference
 connection =
@@ -352,7 +353,7 @@ audioParams =
 -- separated by commas and framed by square brackets
 fullAudioParams :: Parser (List AudioParamDef)
 fullAudioParams =
-  openBracket *>  sepBy1 audioParam comma <* closeBracket
+  toList <$> (openBracket *>  sepBy1 audioParam comma <* closeBracket)
 
 -- but we also support s simple version which is just a number and is
 -- entirely equivalent to a singleton list of one SetValue parameter

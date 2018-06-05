@@ -3,46 +3,51 @@ module Audio.Graph.Control (start, stop, startThenStop) where
 -- | control the starting and stopping of an audio assemblage
 
 import Prelude (Unit, bind, pure, unit)
-import Control.Monad.Eff (Eff)
+import Data.Maybe (Maybe(..))
+import Effect (Effect)
 import Data.Foldable (traverse_)
 import Audio.Graph
-import Audio.WebAudio.Types (AUDIO, AudioNode(..))
+import Audio.WebAudio.Types (AudioNode(..))
 import Audio.WebAudio.Oscillator (startOscillator, stopOscillator)
-import Audio.WebAudio.AudioBufferSourceNode (startBufferSource, stopBufferSource)
+import Audio.WebAudio.AudioBufferSourceNode (StartOptions, startBufferSource, stopBufferSource)
 
 
 import Debug.Trace (trace)
 
 -- | start to play an Assemblage at the given time offset
-start :: ∀ eff. Number -> Assemblage -> Eff ( audio :: AUDIO | eff) Unit
+start :: Number -> Assemblage -> Effect Unit
 start delay assemblage =
   traverse_ (startNode delay) assemblage
 
 -- | stop playing an Assemblage after the supplied duration
-stop :: ∀ eff. Number -> Assemblage -> Eff ( audio :: AUDIO | eff) Unit
+stop :: Number -> Assemblage -> Effect Unit
 stop delay assemblage =
   traverse_ (stopNode delay) assemblage
 
 -- | start playing and then stop after the supplied duration
-startThenStop :: ∀ eff. Number -> Number -> Assemblage
-     -> Eff (audio :: AUDIO | eff) Unit
+startThenStop :: Number -> Number -> Assemblage
+     -> Effect Unit
 startThenStop startTime stopTime assemblage = do
   _ <- start startTime assemblage
   stop stopTime assemblage
 
-startNode :: ∀ eff. Number -> AudioNode -> Eff ( audio :: AUDIO | eff) Unit
+startNode :: Number -> AudioNode -> Effect Unit
 startNode delay node =
   case node of
     Oscillator osc ->
       trace "oscillator started" \_ ->
       startOscillator delay osc
     AudioBufferSource src ->
-      trace "audio buffer source started" \_ ->
-      startBufferSource delay src
+      let
+        whenOption :: StartOptions
+        whenOption = { when: Just delay,  offset: Nothing, duration: Nothing }
+      in
+        trace "audio buffer source started" \_ ->
+        startBufferSource whenOption src
     _ ->
       pure unit
 
-stopNode :: ∀ eff. Number -> AudioNode -> Eff ( audio :: AUDIO | eff) Unit
+stopNode :: Number -> AudioNode -> Effect Unit
 stopNode delay node =
   case node of
     Oscillator osc ->

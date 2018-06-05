@@ -6,8 +6,8 @@ import Audio.Graph (AudioGraph, NodeDef(..), NodeType(..))
 import Audio.Buffer (AudioBuffers)
 import Audio.Graph.Attributes (getString)
 import Audio.WebAudio.BaseAudioContext (decodeAudioDataAsync)
-import Audio.WebAudio.Types (AUDIO, AudioContext, AudioBuffer)
-import Control.Monad.Aff (Aff)
+import Audio.WebAudio.Types (AudioContext, AudioBuffer)
+import Effect.Aff (Aff)
 import Data.Either (Either(..), either)
 import Data.HTTP.Method (Method(..))
 import Data.Map (fromFoldable)
@@ -15,7 +15,8 @@ import Data.Maybe (Maybe(..))
 import Data.List (List(..), concat, singleton)
 import Data.Traversable (traverse, sequence)
 import Data.Tuple (Tuple(..))
-import Network.HTTP.Affjax (AJAX, affjax, defaultRequest)
+import Network.HTTP.Affjax (affjax, defaultRequest)
+import Network.HTTP.Affjax.Response as Response
 import Network.HTTP.StatusCode (StatusCode(..))
 import Prelude (bind, pure, ($), (<$>), (<<<), (==), (<>))
 
@@ -24,15 +25,10 @@ import Prelude (bind, pure, ($), (<$>), (<<<), (==), (<>))
 -- | (currently AudioBufferSourceNodes) and return an Error if any fail
 -- | or an audioBuffers map if all's OK.
 
-loadBuffers :: ∀ eff.
+loadBuffers ::
   AudioContext
   -> AudioGraph
-  -> Aff
-      ( ajax :: AJAX
-      , audio :: AUDIO
-      | eff
-      )
-      (Either String AudioBuffers)
+  -> Aff (Either String AudioBuffers)
 loadBuffers ctx graph = do
   ebuffs <- (sequence <<< concat) <$> traverse (loadNodeBuffer ctx) graph
   pure $ either Left (Right <<< fromFoldable) ebuffs
@@ -40,15 +36,10 @@ loadBuffers ctx graph = do
 -- | nodes with resources that are attempted to be loaded are returned
 -- | as a singletom List (either success or failure)
 -- | whereas nodes without resources are returned as Nil
-loadNodeBuffer :: ∀ eff.
+loadNodeBuffer ::
   AudioContext
   -> NodeDef
-  -> Aff
-      ( ajax :: AJAX
-      , audio :: AUDIO
-      | eff
-      )
-      (List (Either String (Tuple String AudioBuffer)))
+  -> Aff (List (Either String (Tuple String AudioBuffer)))
 loadNodeBuffer ctx (NodeDef nd) =
   case nd.nodeType of
     AudioBufferSourceType ->
@@ -59,15 +50,10 @@ loadNodeBuffer ctx (NodeDef nd) =
         singleton <$> loadBufferUrl ctx (NodeDef nd)
     _ -> pure $ Nil
 
-loadBufferUrl :: ∀ eff.
+loadBufferUrl ::
   AudioContext
   -> NodeDef
-  -> Aff
-      ( ajax :: AJAX
-      , audio :: AUDIO
-      | eff
-      )
-      (Either String (Tuple String AudioBuffer))
+  -> Aff (Either String (Tuple String AudioBuffer))
 loadBufferUrl ctx (NodeDef nd) =
   case getString "url" nd.attributes of
     Nothing ->
@@ -76,17 +62,12 @@ loadBufferUrl ctx (NodeDef nd) =
       loadSoundBuffer ctx url
 
 -- | load a single sound buffer resource and decode it
-loadSoundBuffer :: ∀ eff.
+loadSoundBuffer ::
   AudioContext
   -> String
-  -> Aff
-     ( ajax :: AJAX
-     , audio :: AUDIO
-     | eff
-     )
-     (Either String (Tuple String AudioBuffer))
+  -> Aff (Either String (Tuple String AudioBuffer))
 loadSoundBuffer ctx url = do
-  res <- affjax $ defaultRequest { url = url, method = Left GET }
+  res <- affjax Response.arrayBuffer $ defaultRequest { url = url, method = Left GET }
   if (res.status == StatusCode 200)
     then do
       buf <- decodeAudioDataAsync ctx res.response

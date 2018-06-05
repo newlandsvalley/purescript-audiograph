@@ -10,7 +10,7 @@ import Audio.Graph.Parser (PositionedParseError(..))
 import Test.Unit (Test, TestF, suite, test, success, failure)
 import Test.Unit.Assert as Assert
 
-assertCompileError :: forall e. String -> String -> Test e
+assertCompileError :: String -> String -> Test
 assertCompileError s expected =
   let
     compileResult =
@@ -23,7 +23,7 @@ assertCompileError s expected =
       Left (PositionedParseError ppe) ->
         Assert.equal expected ppe.error
 
-assertCompiles :: forall e. String -> Test e
+assertCompiles :: String -> Test
 assertCompiles s =
   let
     compileResult =
@@ -36,12 +36,12 @@ assertCompiles s =
       Left err ->
         failure ("compile failed: " <> (show err))
 
-compilerSuite :: forall t. Free (TestF t) Unit
+compilerSuite :: Free TestF Unit
 compilerSuite = do
    basicSuite
    badInputSuite
 
-basicSuite :: forall t. Free (TestF t) Unit
+basicSuite :: Free TestF Unit
 basicSuite =
   suite "basic" do
     test "2 nodes" do
@@ -113,7 +113,7 @@ basicSuite =
       assertCompiles ("Oscillator id2 { frequency 880 } End")
 
 
-badInputSuite :: forall t. Free (TestF t) Unit
+badInputSuite :: Free TestF Unit
 badInputSuite =
   suite "bad input" do
     test "duplicate node id" do
