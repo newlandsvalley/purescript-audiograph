@@ -1,17 +1,17 @@
 module Main where
 
 import Prelude
-import Control.Monad.Eff (Eff)
-import Control.Monad.Eff.Console (CONSOLE, log)
-import Control.Monad.Aff (Aff, liftEff', launchAff, delay)
-import Network.HTTP.Affjax (AJAX)
+import Effect (Effect)
+import Effect.Console (log)
+import Effect.Class (liftEffect)
+import Effect.Aff (Aff, launchAff, delay)
 import Data.Either (Either(..), either)
 import Data.Tuple (Tuple(..))
 import Data.Map (empty)
 import Data.Time.Duration (Milliseconds(..))
 
 
-import Audio.WebAudio.Types (AUDIO, AudioContext)
+import Audio.WebAudio.Types (AudioContext)
 import Audio.WebAudio.BaseAudioContext (newAudioContext)
 import Audio.Graph (AudioGraph, Assemblage)
 import Audio.Graph.Compiler (compile, compileUpdate)
@@ -21,15 +21,14 @@ import Audio.Graph.Builder (build)
 import Audio.Graph.Updater (update)
 
 
-main :: forall e. Eff (ajax :: AJAX, console :: CONSOLE, audio :: AUDIO | e) Unit
+main :: Effect Unit
 main = do
     ctx <- newAudioContext
     _ <- launchAff $ play ctx 3.0 example3
     -- _ <- launchAff $ startThenUpdate ctx 2.0 example1 example1Update
     pure unit
 
-play :: forall e. AudioContext -> Number -> String
-     -> Aff (ajax :: AJAX, console :: CONSOLE, audio :: AUDIO | e) Unit
+play :: AudioContext -> Number -> String -> Aff Unit
 play ctx duration text =
   let
     audioGraph=
@@ -37,14 +36,13 @@ play ctx duration text =
   in
     case audioGraph of
       Left (PositionedParseError ppe) ->
-        liftEff' $ log ("compile error: " <> ppe.error)
+        liftEffect $ log ("compile error: " <> ppe.error)
       Right graph ->
         do
           assemblage <- build ctx graph
-          liftEff' $ either (\err -> log ("load error: " <> err)) (startThenStop 0.0 duration) assemblage
+          liftEffect $ either (\err -> log ("load error: " <> err)) (startThenStop 0.0 duration) assemblage
 
-startThenUpdate :: forall e. AudioContext -> Number -> String -> String
-     -> Aff (ajax :: AJAX, console :: CONSOLE, audio :: AUDIO | e) Unit
+startThenUpdate :: AudioContext -> Number -> String -> String -> Aff Unit
 startThenUpdate ctx duration text updateText =
   let
     audioGraph=
@@ -54,21 +52,21 @@ startThenUpdate ctx duration text updateText =
   in
     case Tuple audioGraph updateGraph of
       Tuple (Left (PositionedParseError ppe) ) _ ->
-        liftEff' $ log ("nodedef compile error: " <> ppe.error)
+        liftEffect $ log ("nodedef compile error: " <> ppe.error)
       Tuple _ (Left (PositionedParseError ppe) ) ->
-        liftEff' $ log ("update parse error: " <> ppe.error)
+        liftEffect $ log ("update parse error: " <> ppe.error)
       Tuple (Right graph) (Right graphChange) ->
         do
           eassemblage <- build ctx graph
-          either (\err -> liftEff' $ log ("load error: " <> err))
+          either (\err -> liftEffect $ log ("load error: " <> err))
                  (\assemblage -> updateSequence ctx duration assemblage graphChange) eassemblage
 
-updateSequence :: ∀ eff. AudioContext -> Number -> Assemblage -> AudioGraph -> Aff (audio :: AUDIO | eff) Unit
+updateSequence :: AudioContext -> Number -> Assemblage -> AudioGraph -> Aff Unit
 updateSequence ctx duration assemblage graphChange = do
-  _ <- liftEff' $ start 0.0 assemblage
+  _ <- liftEffect $ start 0.0 assemblage
   _ <- delay (Milliseconds 1000.0)
-  _ <- liftEff' $update ctx empty assemblage graphChange
-  liftEff' $ stop duration assemblage
+  _ <- liftEffect $update ctx empty assemblage graphChange
+  liftEffect $ stop duration assemblage
 
 
 example1 :: String
