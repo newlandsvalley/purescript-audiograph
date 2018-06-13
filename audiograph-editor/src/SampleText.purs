@@ -1,8 +1,8 @@
 module SampleText (audioBuffer, cowbell, frequencyModulation, randomSample) where
 
 import Prelude ((<>), ($), (-), bind, pure)
-import Control.Monad.Eff.Random (RANDOM, randomInt)
-import Control.Monad.Eff (Eff)
+import Effect.Random (randomInt)
+import Effect (Effect)
 import Data.Array ((!!), length)
 import Data.Maybe (fromMaybe)
 
@@ -79,7 +79,7 @@ samples =
   , convolver
   ]
 
-randomSample :: ∀ eff. Eff (random :: RANDOM | eff) String
+randomSample :: Effect String
 randomSample = do
   idx <- randomInt 0 (length samples - 1)
   pure $ fromMaybe cowbell $ samples !! idx

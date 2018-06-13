@@ -3,9 +3,9 @@ module Container where
 import Prelude
 
 
-import Audio.WebAudio.Types (AUDIO, AudioContext)
+import Audio.WebAudio.Types (AudioContext)
 import Audio.Graph (AudioGraph)
-import Control.Monad.Aff (Aff)
+import Effect.Aff (Aff)
 import Data.Either (Either(..), either)
 import Data.Either.Nested (Either6)
 import Audio.Graph.Parser  (PositionedParseError(..))
@@ -21,13 +21,8 @@ import Halogen.EditorComponent as ED
 import Halogen.FileInputComponent as FIC
 import Halogen.SimpleButtonComponent as Button
 import Halogen.AugPlayerComponent as Player
-import JS.FileIO (FILEIO, Filespec, saveTextFile)
-import Network.HTTP.Affjax (AJAX)
-import Control.Monad.Eff.Random (RANDOM)
+import JS.FileIO (Filespec, saveTextFile)
 import SampleText (randomSample)
-
-
-type AppEffects eff = (ajax :: AJAX, audio :: AUDIO, fileio :: FILEIO, random :: RANDOM | eff)
 
 type State =
   { ctx :: AudioContext
@@ -96,8 +91,7 @@ playerSlotNo :: CP.ChildPath Player.Query ChildQuery PlayerSlot ChildSlot
 playerSlotNo = CP.cp6
 
 
-component ::  ∀ eff. AudioContext -> H.Component HH.HTML Query Unit Void (Aff (AppEffects eff))
--- component ::  ∀ eff p. H.Component HH.HTML Query Unit Void (Aff (au :: AUDIO, fileio :: FILEIO, sdom :: SDOM | eff))
+component ::  AudioContext -> H.Component HH.HTML Query Unit Void Aff
 component ctx =
   H.parentComponent
     { initialState: const (initialState ctx)
@@ -114,7 +108,7 @@ component ctx =
     , fileName: Nothing
     }
 
-  render :: State -> H.ParentHTML Query ChildQuery ChildSlot (Aff (AppEffects eff))
+  render :: State -> H.ParentHTML Query ChildQuery ChildSlot Aff
   render state = HH.div_
     [ HH.h1
       [HP.class_ (H.ClassName "center") ]
@@ -153,7 +147,7 @@ component ctx =
     ]
 
   -- the play button is visible if we can parse the audiograph
-  renderPlayButton ::  ∀ eff1. State -> H.ParentHTML Query ChildQuery ChildSlot (Aff (ajax :: AJAX, audio :: AUDIO| eff1))
+  renderPlayButton ::  State -> H.ParentHTML Query ChildQuery ChildSlot Aff
   renderPlayButton state =
     case state.graphResult of
       Right audioGraph ->
@@ -165,14 +159,14 @@ component ctx =
         HH.div_
           [  ]
 
-  eval :: Query ~> H.ParentDSL State Query ChildQuery ChildSlot Void (Aff (AppEffects eff))
+  eval :: Query ~> H.ParentDSL State Query ChildQuery ChildSlot Void Aff
   eval (HandleAugFile (FIC.FileLoaded filespec) next) = do
-    H.modify (\st -> st { fileName = Just filespec.name } )
+    _ <- H.modify (\st -> st { fileName = Just filespec.name } )
     _ <- H.query' playerSlotNo unit $ H.action (Player.Stop)
     _ <- H.query' editorSlotNo unit $ H.action (ED.UpdateContent filespec.contents)
     pure next
   eval (HandleClearButton (Button.Toggled _) next) = do
-    H.modify (\st -> st { fileName = Nothing } )
+    _ <- H.modify (\st -> st { fileName = Nothing } )
     _ <- H.query' playerSlotNo unit $ H.action (Player.Stop)
     _ <- H.query' editorSlotNo unit $ H.action (ED.UpdateContent "")
     pure next
@@ -183,17 +177,17 @@ component ctx =
       fileName = getFileName state
       text = fromMaybe "" maybeText
       fsp = { name: fileName, contents : text} :: Filespec
-    _ <- H.liftEff $ saveTextFile fsp
+    _ <- H.liftEffect $ saveTextFile fsp
     pure next
   eval (HandleSampleButton (Button.Toggled _) next) = do
-    H.modify (\st -> st { fileName = Nothing } )
-    sample <- H.liftEff randomSample
+    _ <- H.modify (\st -> st { fileName = Nothing } )
+    sample <- H.liftEffect randomSample
     _ <- H.query' playerSlotNo unit $ H.action (Player.Stop)
     _ <- H.query' editorSlotNo unit $ H.action (ED.UpdateContent sample)
     pure next
   eval (HandleNewAudioGraphText (ED.AudioGraphResult r) next) = do
     _ <- refreshPlayerState r
-    H.modify (\st -> st { graphResult = r} )
+    _ <- H.modify (\st -> st { graphResult = r} )
     pure next
   -- all the activity of the audiograph player is handed off to the player itself
   eval (HandleAugPlayer (Player.Toggled _) next) =
@@ -201,9 +195,9 @@ component ctx =
 
 -- refresh the state of the player
 -- by passing it the audiograph result
-refreshPlayerState :: ∀ eff.
+refreshPlayerState ::
        Either PositionedParseError AudioGraph
-    -> H.ParentDSL State Query ChildQuery ChildSlot Void (Aff (AppEffects eff)) Unit
+    -> H.ParentDSL State Query ChildQuery ChildSlot Void Aff Unit
 refreshPlayerState audioGraphResult = do
   _ <- either
     (\_ -> H.query' playerSlotNo unit $ H.action (Player.Stop))

@@ -17,8 +17,8 @@ module Halogen.AugPlayerComponent where
 import Prelude
 
 
-import Control.Monad.Aff (Aff, liftEff')
-import Network.HTTP.Affjax (AJAX)
+import Effect.Aff (Aff)
+import Effect.Class (liftEffect)
 import Data.Either (Either(..), either, isLeft)
 import Halogen as H
 import Halogen.HTML as HH
@@ -28,9 +28,7 @@ import Halogen.HTML.Properties as HP
 import Audio.Graph (AudioGraph, Assemblage)
 import Audio.Graph.Control (start, stop) as Control
 import Audio.Graph.Builder (build)
-import Audio.WebAudio.Types (AUDIO, AudioContext)
-
-type PlayerEffects eff = (ajax :: AJAX, audio :: AUDIO| eff)
+import Audio.WebAudio.Types (AudioContext)
 
 type Input = AudioGraph
 
@@ -48,7 +46,7 @@ data Query a
 data Message = Toggled Boolean
 
 
-component :: forall eff. AudioContext -> AudioGraph -> H.Component HH.HTML Query Input Message (Aff (PlayerEffects eff))
+component :: AudioContext -> AudioGraph -> H.Component HH.HTML Query Input Message Aff
 component ctx audioGraph =
   H.component
     { initialState: const (initialState ctx audioGraph)
@@ -84,7 +82,7 @@ component ctx audioGraph =
           , HH.text (buildError state)
         ]
 
-  eval :: ∀ eff'. Query ~> H.ComponentDSL State Query Message (Aff (PlayerEffects eff'))
+  eval :: Query ~> H.ComponentDSL State Query Message Aff
   eval = case _ of
     -- toggle between play and stop when the button is pressed
     Toggle next -> do
@@ -116,8 +114,7 @@ isPlaying state =
   either (\_ -> false) (\_ -> true) state.assemblage
 
 -- toggle between playing the assembled audiograph and stopping it
-togglePlayStop :: forall eff. State
-      -> Aff (PlayerEffects eff) State
+togglePlayStop :: State -> Aff State
 togglePlayStop state =
   case state.assemblage of
     Right ass ->
@@ -128,8 +125,7 @@ togglePlayStop state =
 
 -- play the audio graph if we can
 -- at the moment, this throws away build errors
-play :: forall eff. State
-      -> Aff (PlayerEffects eff) State
+play :: State -> Aff State
 play state = do
   assemblage <-
     if isLeft state.assemblage
@@ -142,22 +138,21 @@ play state = do
   let
     newState = state { assemblage = assemblage }
   -- play it if we can
-  _ <- liftEff' $ either (\err -> pure unit) (Control.start 0.0) assemblage
+  _ <- liftEffect $ either (\err -> pure unit) (Control.start 0.0) assemblage
   pure newState
 
 
 -- stop the playing
-stop :: forall eff. State
-      -> Aff (PlayerEffects eff) State
+stop :: State -> Aff State
 stop state =
   case state.assemblage of
     Right ass ->
       do
-        _ <- liftEff' $ Control.stop 0.0 ass
+        _ <- liftEffect $ Control.stop 0.0 ass
         pure $ state { assemblage = Left "" }
     _ ->
       pure $ state { assemblage = Left "" }
 
 buildError :: State -> String
 buildError state =
-  either id (\_ -> "") state.assemblage
+  either identity (\_ -> "") state.assemblage
