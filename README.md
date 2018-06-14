@@ -1,14 +1,14 @@
 purescript-audiograph
 =====================
 
-The idea is to build a simple proof of concept to provide a declarative interface into web-audio in purescript - something roughly along the lines of [visual-audio-graph](https://github.com/benji6/virtual-audio-graph).
+This is a declarative interface into web-audio in purescript - something roughly along the lines of [visual-audio-graph](https://github.com/benji6/virtual-audio-graph).
 
 Try it out [here](http://www.tradtunedb.org.uk:8602/).
 
 Level of support for Web-Audio
 ------------------------------
 
-The following nodes are supported at the moment - an implicit __destination__ (output), __Oscillator__, __AudioBufferSource__, __BiquadFilter__, __Delay__, __Gain__, __StereoPanner__, __Convolver__ and __DynamicsCompressor__. This includes all the nodes currently in Chris Waterson's  [purescript-webaudio](https://github.com/waterson/purescript-webaudio) library other than Analyser and MediaElementSource. Full details are given [here](https://github.com/newlandsvalley/purescript-audiograph/blob/master/NODES.md).
+The following nodes are supported at the moment - an implicit __destination__ (output), __Oscillator__, __AudioBufferSource__, __BiquadFilter__, __Delay__, __Gain__, __StereoPanner__, __Convolver__ and __DynamicsCompressor__. This includes all the nodes currently [purescript-webaudio](hhttps://pursuit.purescript.org/packages/purescript-webaudio/0.1.2) other than Analyser and MediaElementSource. Full details are given [here](https://github.com/newlandsvalley/purescript-audiograph/blob/master/NODES.md).
 
 
 Examples
@@ -93,7 +93,21 @@ from the current directory:
     $ bower install
     $ pulp build
 
-Building the simple Examples
+User Interface
+--------------
+
+__audiograph_editor__ is an editor (written in Halogen) for audiograph scripts that allows you to 'play' the script after each keystroke (assuming that it still conforms to the DSL).
+
+to build:
+
+cd to audiograph-editor
+
+    $ bower install
+    $ npm run build
+    
+Then host audiograph-editor/dist/index.html on your web server of choice.    
+
+Building the Simple Examples
 ----------------------------
 
 cd to simple-examples:
@@ -106,4 +120,4 @@ Then host simple-examples/dist/index.html on your web server of choice.
 Contributing
 ------------
 
-The POC seems promising.  Contributions would be more than welcome to help nurture it a little. purescript-webaudio only covers a relatively small proportion of the Web-Audio API and PRs which attempt to extend its reach are not being actively merged. __visual-audio-graph__ has some nice approaches to specifying custom nodes which we could perhaps steal.
+Contributions would be more than welcome to help nurture it a little. purescript-webaudio only covers a relatively small proportion of the Web-Audio API at the moment. __visual-audio-graph__ has some nice approaches to specifying custom nodes which we could perhaps steal.
