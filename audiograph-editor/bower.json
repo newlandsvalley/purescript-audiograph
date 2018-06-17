@@ -9,11 +9,11 @@
   "dependencies": {
     "purescript-console": "^4.1.0",
     "purescript-halogen": "^4.0.0",
-    "purescript-halogen-css": "https://github.com/justinwoo/purescript-halogen-css.git#compiler/0.12",
+    "purescript-halogen-css": "^8.0.0",
     "purescript-css": "^4.0.0",
     "purescript-arraybuffer": "^7.0.0",
     "purescript-random": "^4.0.0",
-    "purescript-js-fileio": "https://github.com/newlandsvalley/purescript-js-fileio.git#compiler/0.12",
+    "purescript-js-fileio": "https://github.com/newlandsvalley/purescript-js-fileio.git#2.0.0",
     "purescript-audiograph": "https://github.com/newlandsvalley/purescript-audiograph.git#compiler/0.12"
   },
   "devDependencies": {
