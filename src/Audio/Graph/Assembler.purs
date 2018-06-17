@@ -14,18 +14,16 @@ import Audio.WebAudio.BaseAudioContext (createBufferSource, createOscillator,
 import Audio.WebAudio.Types (AudioContext, AudioNode(..),  connect, connectParam)
 import Effect (Effect)
 import Data.Foldable (traverse_, foldM)
-import Data.Map (insert, lookup, singleton, size)
+import Data.Map (insert, lookup, singleton)
 import Data.Maybe (Maybe(..))
 import Data.Set (Set)
-import Prelude (Unit, bind, pure, show, unit, (<>), ($))
+import Prelude (Unit, bind, pure, unit)
 
-
-import Debug.Trace (trace)
 
 -- | assemble the web-audio graph as a playable assemblage
 assemble :: AudioContext -> AudioBuffers -> AudioGraph -> Effect Assemblage
 assemble ctx buffers graph =
-  trace "assembling graph" \_ ->
+  -- trace "assembling graph" \_ ->
   do
     destNode <- destination ctx
     -- the assembled nodes always contain a destination node called 'output'
@@ -39,7 +37,7 @@ assemble ctx buffers graph =
 
 assembleNode :: AudioContext -> AudioBuffers -> Assemblage -> NodeDef-> Effect Assemblage
 assembleNode ctx buffers ass (NodeDef nd) =
-  trace ("assemblage size: " <> (show $ size ass)) \_ ->
+  -- trace ("assemblage size: " <> (show $ size ass)) \_ ->
   case nd.nodeType of
     OscillatorType -> assembleOscillator ctx ass (NodeDef nd)
     AudioBufferSourceType -> assembleAudioBufferSource ctx ass buffers (NodeDef nd)
@@ -54,7 +52,7 @@ assembleNode ctx buffers ass (NodeDef nd) =
 
 assembleOscillator :: AudioContext -> Assemblage -> NodeDef-> Effect Assemblage
 assembleOscillator ctx ass (NodeDef nd) =
-  trace ("assembling oscillator id: " <> nd.id) \_ ->
+  -- trace ("assembling oscillator id: " <> nd.id) \_ ->
   do
     now <- currentTime ctx
     oscNode <- createOscillator ctx
@@ -65,7 +63,7 @@ assembleOscillator ctx ass (NodeDef nd) =
 
 assembleGain :: AudioContext -> Assemblage -> NodeDef-> Effect Assemblage
 assembleGain ctx ass (NodeDef nd) =
-  trace ("assembling gain id: " <> nd.id) \_ ->
+  -- trace ("assembling gain id: " <> nd.id) \_ ->
   do
     now <- currentTime ctx
     gainNode <- createGain ctx
@@ -76,7 +74,7 @@ assembleGain ctx ass (NodeDef nd) =
 
 assembleBiquadFilter :: AudioContext -> Assemblage -> NodeDef-> Effect Assemblage
 assembleBiquadFilter ctx ass (NodeDef nd) =
-  trace ("assembling biquad filter id: " <> nd.id) \_ ->
+  -- trace ("assembling biquad filter id: " <> nd.id) \_ ->
   do
     now <- currentTime ctx
     biquadFilterNode <- createBiquadFilter ctx
@@ -87,7 +85,7 @@ assembleBiquadFilter ctx ass (NodeDef nd) =
 
 assembleAudioBufferSource :: AudioContext -> Assemblage -> AudioBuffers -> NodeDef-> Effect Assemblage
 assembleAudioBufferSource ctx ass buffers (NodeDef nd) =
-  trace ("assembling audio buffer source id: " <> nd.id) \_ ->
+  -- trace ("assembling audio buffer source id: " <> nd.id) \_ ->
   do
     audioBufferSourceNode <- createBufferSource ctx
     _ <- setAudioBufferSourceAttributes audioBufferSourceNode nd.attributes buffers
@@ -97,7 +95,7 @@ assembleAudioBufferSource ctx ass buffers (NodeDef nd) =
 
 assembleDelay :: AudioContext -> Assemblage -> NodeDef-> Effect Assemblage
 assembleDelay ctx ass (NodeDef nd) =
-  trace ("assembling delay id: " <> nd.id) \_ ->
+  -- trace ("assembling delay id: " <> nd.id) \_ ->
   do
     now <- currentTime ctx
     delayNode <- createDelay ctx
@@ -108,7 +106,7 @@ assembleDelay ctx ass (NodeDef nd) =
 
 assembleStereoPanner :: AudioContext -> Assemblage -> NodeDef-> Effect Assemblage
 assembleStereoPanner ctx ass (NodeDef nd) =
-  trace ("assembling stereo panner id: " <> nd.id) \_ ->
+  -- trace ("assembling stereo panner id: " <> nd.id) \_ ->
   do
     now <- currentTime ctx
     stereoPannerNode <- createStereoPanner ctx
@@ -119,7 +117,7 @@ assembleStereoPanner ctx ass (NodeDef nd) =
 
 assembleDynamicsCompressor :: AudioContext -> Assemblage -> NodeDef-> Effect Assemblage
 assembleDynamicsCompressor ctx ass (NodeDef nd) =
-  trace ("assembling dynamics compressor id: " <> nd.id) \_ ->
+  -- trace ("assembling dynamics compressor id: " <> nd.id) \_ ->
   do
     now <- currentTime ctx
     dynamicsCompressorNode <- createDynamicsCompressor ctx
@@ -130,7 +128,7 @@ assembleDynamicsCompressor ctx ass (NodeDef nd) =
 
 assembleConvolver :: AudioContext -> Assemblage -> AudioBuffers -> NodeDef-> Effect Assemblage
 assembleConvolver ctx ass buffers (NodeDef nd) =
-  trace ("assembling convolver id: " <> nd.id) \_ ->
+  -- trace ("assembling convolver id: " <> nd.id) \_ ->
   do
     convolverNode <- createConvolver ctx
     _ <- setConvolverAttributes convolverNode nd.attributes buffers
@@ -143,7 +141,7 @@ assembleConvolver ctx ass buffers (NodeDef nd) =
 -- assemble connections from the node defined in the NodeDef
 assembleConnections :: Assemblage -> NodeDef-> Effect Unit
 assembleConnections ass (NodeDef nd) =
-  trace ("assembling connections for node: " <> nd.id) \_ ->
+  -- trace ("assembling connections for node: " <> nd.id) \_ ->
   let
     maybeAudioNode = lookup nd.id ass
   in
@@ -169,7 +167,7 @@ setConnectionRef sourceNode ass ref =
 -- set one connection from a node to a target node
 setConnection :: AudioNode -> Assemblage -> String  -> Effect Unit
 setConnection sourceNode ass target =
-  trace ("connecting to target: " <> target) \_ ->
+  -- trace ("connecting to target: " <> target) \_ ->
   case lookup target ass of
     Just targetNode ->
       -- this is very verbose but I haven't yet found a mechanism of generalising it
@@ -199,11 +197,11 @@ setConnection sourceNode ass target =
 
 -- set a connection from a node to an audio paramter on a target node
 setConnectionParam :: AudioNode -> Assemblage -> String  -> String -> Effect Unit
-setConnectionParam sourceNode ass targetNode param =
+setConnectionParam sourceNode ass target param =
   -- not yet implemented
   -- unsafeConnectParam modGainNode carrier "frequency"
-  trace ("connecting to target: " <> targetNode <> "." <> param) \_ ->
-  case lookup targetNode ass of
+  -- trace ("connecting to target: " <> targetNode <> "." <> param) \_ ->
+  case lookup target ass of
     Just targetNode ->
       -- this is very verbose but I haven't yet found a mechanism of generalising it
       case sourceNode of

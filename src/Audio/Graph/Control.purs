@@ -12,8 +12,6 @@ import Audio.WebAudio.Oscillator (startOscillator, stopOscillator)
 import Audio.WebAudio.AudioBufferSourceNode (StartOptions, startBufferSource, stopBufferSource)
 
 
-import Debug.Trace (trace)
-
 -- | start to play an Assemblage at the given time offset
 start :: Number -> Assemblage -> Effect Unit
 start delay assemblage =
@@ -35,14 +33,14 @@ startNode :: Number -> AudioNode -> Effect Unit
 startNode delay node =
   case node of
     Oscillator osc ->
-      trace "oscillator started" \_ ->
+      -- trace "oscillator started" \_ ->
       startOscillator delay osc
     AudioBufferSource src ->
       let
         whenOption :: StartOptions
         whenOption = { when: Just delay,  offset: Nothing, duration: Nothing }
       in
-        trace "audio buffer source started" \_ ->
+        --trace "audio buffer source started" \_ ->
         startBufferSource whenOption src
     _ ->
       pure unit
@@ -51,10 +49,10 @@ stopNode :: Number -> AudioNode -> Effect Unit
 stopNode delay node =
   case node of
     Oscillator osc ->
-      trace "oscillator stopped" \_ ->
+      -- trace "oscillator stopped" \_ ->
       stopOscillator delay osc
     AudioBufferSource src ->
-      trace "audio buffer source stopped" \_ ->
+      -- trace "audio buffer source stopped" \_ ->
       stopBufferSource delay src
     _ ->
       pure unit

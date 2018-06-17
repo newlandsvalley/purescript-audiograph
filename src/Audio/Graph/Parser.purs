@@ -29,7 +29,6 @@ type SymbolTable =
   { nodeNames :: Set.Set String
   }
 
-
 -- there is always one implied node named output
 initialSymbolTable :: SymbolTable
 initialSymbolTable =

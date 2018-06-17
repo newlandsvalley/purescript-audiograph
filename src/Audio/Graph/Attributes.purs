@@ -37,8 +37,6 @@ import Data.Symbol (SProxy(..))
 import Data.Foldable (traverse_)
 import Data.Variant (Variant, inj, on, default)
 
-import Debug.Trace (trace)
-
 -- | the (type of) an attribute of an audio node
 type AudioAttribute = Variant ( oscillatorType :: OscillatorType
                               , biquadFilterType :: BiquadFilterType
@@ -181,12 +179,13 @@ getAudioParams attName map =
     paramList =
       fromMaybe Nil $ getVAudioParams <$> (lookup attName map)
   in
-    trace ("audio params for: " <> attName) \_ ->
-    trace (show $ length paramList) \_ ->
+    -- trace ("audio params for: " <> attName) \_ ->
+    -- trace (show $ length paramList) \_ ->
     paramList
 
 -- set Audio attributes from values in the map
 
+-- | set the oscillator type
 setOscillatorTypeAttr :: OscillatorNode -> AttributeMap -> Effect Unit
 setOscillatorTypeAttr osc map =
   case getOscillatorType map of
@@ -195,6 +194,7 @@ setOscillatorTypeAttr osc map =
     _ ->
       pure unit
 
+-- | set the filter type
 setBiquadFilterTypeAttr :: BiquadFilterNode -> AttributeMap -> Effect Unit
 setBiquadFilterTypeAttr  bqf map =
   case getBiquadFilterType map of
@@ -248,7 +248,7 @@ setBiquadFilterQualityAttr startTime bqf map =
         audioParam <- quality bqf
         setParams startTime audioParam ps
 
-
+-- | set the gain (volume)
 setGainAttr :: Number -> GainNode -> AttributeMap -> Effect Unit
 setGainAttr startTime gainNode map =
   case getAudioParams "gain" map of
@@ -259,6 +259,7 @@ setGainAttr startTime gainNode map =
         gainParam <- gain gainNode
         setParams startTime gainParam ps
 
+-- | set the delay
 setDelayAttr :: Number -> DelayNode -> AttributeMap -> Effect Unit
 setDelayAttr startTime delayNode map =
   case getAudioParams "delayTime" map of
@@ -269,6 +270,7 @@ setDelayAttr startTime delayNode map =
         delayParam <- delayTime delayNode
         setParams startTime delayParam ps
 
+-- | set the stereo pan
 setStereoPannerAttr :: Number -> StereoPannerNode -> AttributeMap -> Effect Unit
 setStereoPannerAttr startTime stereoPannerNode map =
   case getAudioParams "pan" map of
@@ -279,7 +281,7 @@ setStereoPannerAttr startTime stereoPannerNode map =
         panParam <- pan stereoPannerNode
         setParams startTime panParam ps
 
-
+-- | set the compressor threshold
 setCompressorThresholdAttr :: Number -> DynamicsCompressorNode -> AttributeMap -> Effect Unit
 setCompressorThresholdAttr startTime compressorNode map =
   case getAudioParams "threshold" map of
@@ -317,10 +319,10 @@ setAudioBufferAttr audioBufferNode attMap buffers =
   in
     case maybeBuffer of
       Nothing ->
-        trace "buffer not loaded" \_ ->
+        -- trace "buffer not loaded" \_ ->
         pure unit
       Just buffer ->
-        trace "buffer loaded" \_ ->
+        -- trace "buffer loaded" \_ ->
         setBuffer buffer audioBufferNode
 
 setAudioBufferLoopAttr :: AudioBufferSourceNode-> AttributeMap -> Effect Unit
@@ -355,10 +357,10 @@ setConvolverBufferAttr convolverNode attMap buffers =
   in
     case maybeBuffer of
       Nothing ->
-        trace "convolver buffer not loaded" \_ ->
+        -- trace "convolver buffer not loaded" \_ ->
         pure unit
       Just buffer ->
-        trace "convolver buffer loaded" \_ ->
+        -- trace "convolver buffer loaded" \_ ->
         Convolver.setBuffer buffer convolverNode
 
 setConvolverNormalizeAttr :: ConvolverNode-> AttributeMap -> Effect Unit
