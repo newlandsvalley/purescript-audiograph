@@ -12,9 +12,9 @@ import Audio.Graph.Attributes (setOscillatorAttributes, setAudioBufferSourceAttr
 import Audio.WebAudio.Types (AudioContext, AudioNode(..))
 import Effect (Effect)
 import Data.Foldable (traverse_)
-import Data.Map (lookup, size)
+import Data.Map (lookup)
 import Data.Maybe (Maybe(..))
-import Prelude (Unit, bind, pure, show, unit, (<>), ($))
+import Prelude (Unit, bind, pure, unit)
 
 
 -- | assemble the update web-audio graph as a playable assemblage

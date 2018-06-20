@@ -13,7 +13,7 @@ module Audio.Graph.Attributes
 -- | AudioParams (https://developer.mozilla.org/en-US/docs/Web/API/AudioParam)
 -- | which have special properties
 
-import Prelude (Unit, ($), (<$>), (<$), (#), (>>=), (<>), (+), identity, bind, pure, show, unit)
+import Prelude (Unit, ($), (<$>), (<$), (#), (>>=), (+), identity, bind, pure, unit)
 import Effect (Effect)
 import Audio.WebAudio.Types (OscillatorNode, GainNode, BiquadFilterNode,
   AudioBufferSourceNode, DelayNode, StereoPannerNode, ConvolverNode,
@@ -32,7 +32,7 @@ import Audio.WebAudio.ConvolverNode (setBuffer, normalize) as Convolver
 import Audio.Buffer (AudioBuffers)
 import Data.Map (Map, insert, lookup)
 import Data.Maybe (Maybe(..), fromMaybe)
-import Data.List (List(..), length)
+import Data.List (List(..))
 import Data.Symbol (SProxy(..))
 import Data.Foldable (traverse_)
 import Data.Variant (Variant, inj, on, default)
