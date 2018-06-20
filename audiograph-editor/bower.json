@@ -14,7 +14,7 @@
     "purescript-arraybuffer": "^7.0.0",
     "purescript-random": "^4.0.0",
     "purescript-js-fileio": "https://github.com/newlandsvalley/purescript-js-fileio.git#2.0.0",
-    "purescript-audiograph": "https://github.com/newlandsvalley/purescript-audiograph.git#compiler/0.12"
+    "purescript-audiograph": "https://github.com/newlandsvalley/purescript-audiograph.git#0.2.0"
   },
   "devDependencies": {
     "purescript-psci-support": "^4.0.0"

@@ -1,6 +1,11 @@
 purescript-audiograph
 =====================
 
+
+[![Latest release](http://img.shields.io/github/release/newlandsvalley/purescript-audiograph.svg)](https://github.com/newlandsvalley/purescript-audiograph/releases)
+[![Build Status](https://travis-ci.org/newlandsvalley/purescript-audiograph.svg?branch=master)](https://travis-ci.org/newlandsvalley/purescript-audiograph)
+
+
 This is a declarative interface into web-audio in purescript - something roughly along the lines of [visual-audio-graph](https://github.com/benji6/virtual-audio-graph).
 
 Try it out [here](http://www.tradtunedb.org.uk:8602/).
@@ -104,7 +109,7 @@ cd to audiograph-editor
 
     $ bower install
     $ npm run build
-    
+
 Then host audiograph-editor/dist/index.html on your web server of choice.    
 
 Building the Simple Examples
@@ -113,7 +118,7 @@ Building the Simple Examples
 cd to simple-examples:
 
     $ bower install
-    $ ./build.sh
+    $ npm run build
 
 Then host simple-examples/dist/index.html on your web server of choice.
 
@@ -121,3 +126,8 @@ Contributing
 ------------
 
 Contributions would be more than welcome to help nurture it a little. purescript-webaudio only covers a relatively small proportion of the Web-Audio API at the moment. __visual-audio-graph__ has some nice approaches to specifying custom nodes which we could perhaps steal.
+
+Module documentation
+--------------------
+
+Module documentation is [published on Pursuit](http://pursuit.purescript.org/packages/purescript-audiograph).
