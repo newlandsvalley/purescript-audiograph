@@ -20,6 +20,7 @@ import Prelude
 import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
 import Data.Either (Either(..), either, isLeft)
+import Data.Maybe (Maybe(..))
 import Halogen as H
 import Halogen.HTML as HH
 import Halogen.HTML.Core (ClassName(..))
@@ -30,13 +31,20 @@ import Audio.Graph.Control (start, stop) as Control
 import Audio.Graph.Builder (build)
 import Audio.WebAudio.Types (AudioContext)
 
-type Input = AudioGraph
+type Slot = H.Slot Query Message
+
+-- type Input = AudioGraph -- JMW!!!
 
 type State =
   { ctx :: AudioContext
   , audioGraph :: AudioGraph
   , assemblage :: Either String Assemblage
   }
+
+-- actions are those that derive from HTML events
+data Action =
+    ToggleAction
+  | StopAction
 
 data Query a
   = Toggle a
@@ -45,25 +53,28 @@ data Query a
 
 data Message = Toggled Boolean
 
-
-component :: AudioContext -> AudioGraph -> H.Component HH.HTML Query Input Message Aff
-component ctx audioGraph =
-  H.component
-    { initialState: const (initialState ctx audioGraph)
-    , render: render
-    , eval
-    , receiver: HE.input HandleInput
+component :: AudioContext -> AudioGraph -> H.Component HH.HTML Query Unit Message Aff
+component ctx audioGraph  =
+  H.mkComponent
+    { initialState
+    , render
+    , eval: H.mkEval $ H.defaultEval
+        { handleAction = handleAction
+        , handleQuery = handleQuery
+        , initialize = Nothing
+        , finalize = Nothing
+        }
     }
   where
 
-  initialState :: AudioContext -> AudioGraph -> State
-  initialState ctx audioGraph =
+  initialState :: ∀ i. i -> State
+  initialState _  =
     { ctx : ctx
     , audioGraph : audioGraph
     , assemblage : Left ""
     }
 
-  render :: State -> H.ComponentHTML Query
+  render :: State -> H.ComponentHTML Action () Aff
   render state =
     let
       label =
@@ -74,7 +85,7 @@ component ctx audioGraph =
     in
       HH.div_
         [ HH.button
-            [ HE.onClick (HE.input_ Toggle)
+            [ HE.onClick (\_ -> Just ToggleAction)
             , HP.class_ $ ClassName "hoverable"
             ]
             [ HH.text label ]
@@ -82,32 +93,43 @@ component ctx audioGraph =
           , HH.text (buildError state)
         ]
 
-  eval :: Query ~> H.ComponentDSL State Query Message Aff
-  eval = case _ of
-    -- toggle between play and stop when the button is pressed
-    Toggle next -> do
-      state <- H.get
-      newState <- H.liftAff $ togglePlayStop state
-      H.put newState
-      H.raise $ Toggled (isPlaying newState)
-      pure next
-    -- stop when requested externally
-    Stop next -> do
-      state <- H.get
-      if (isPlaying state)
-        then do
-          newState <- H.liftAff $ stop state
-          H.put newState
-          H.raise $ Toggled (isPlaying newState)
-          pure next
-        else
-          pure next
-    -- stop then handle a new audiograph when requested externally
-    HandleInput audioGraph next -> do
-      state <- H.get
-      newState <- H.liftAff $ stop state
-      H.put newState { audioGraph = audioGraph }
-      pure next
+handleQuery :: forall a. Query a -> H.HalogenM State Action () Message Aff (Maybe a)
+handleQuery = case _ of
+  -- toggle between play and stop when the button is pressed
+  Toggle next -> do
+    state <- H.get
+    newState <- H.liftAff $ togglePlayStop state
+    H.put newState
+    H.raise $ Toggled (isPlaying newState)
+    pure (Just next)
+  -- stop when requested externally
+  Stop next -> do
+    state <- H.get
+    if (isPlaying state)
+      then do
+        newState <- H.liftAff $ stop state
+        H.put newState
+        H.raise $ Toggled (isPlaying newState)
+        pure (Just next)
+      else
+        pure (Just next)
+  HandleInput audioGraph next -> do
+    state <- H.get
+    newState <- H.liftAff $ stop state
+    H.put newState { audioGraph = audioGraph }
+    pure (Just next)
+
+-- handling an action from HTML events just delegates to the appropriate query
+-- I'm not sure why using unit is kosher for  the query's a param here but it
+-- seems OK.
+handleAction ∷ Action → H.HalogenM State Action () Message Aff Unit
+handleAction = case _ of
+  StopAction -> do
+    _ <- handleQuery (Stop unit)
+    pure unit
+  ToggleAction -> do
+    _ <- handleQuery (Toggle unit)
+    pure unit
 
 isPlaying :: State -> Boolean
 isPlaying state =
@@ -121,7 +143,6 @@ togglePlayStop state =
       stop state
     _ ->
       play state
-
 
 -- play the audio graph if we can
 -- at the moment, this throws away build errors
@@ -140,7 +161,6 @@ play state = do
   -- play it if we can
   _ <- liftEffect $ either (\err -> pure unit) (Control.start 0.0) assemblage
   pure newState
-
 
 -- stop the playing
 stop :: State -> Aff State

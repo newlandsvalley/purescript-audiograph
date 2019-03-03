@@ -8,13 +8,13 @@
   ],
   "dependencies": {
     "purescript-console": "^4.1.0",
-    "purescript-halogen": "^4.0.0",
+    "purescript-halogen": "https://github.com/slamdata/purescript-halogen.git#5.0.0-rc.1",
     "purescript-halogen-css": "^8.0.0",
     "purescript-css": "^4.0.0",
     "purescript-arraybuffer": "^7.0.0",
     "purescript-random": "^4.0.0",
-    "purescript-js-fileio": "https://github.com/newlandsvalley/purescript-js-fileio.git#2.0.0",
-    "purescript-audiograph": "https://github.com/newlandsvalley/purescript-audiograph.git#0.2.0"
+    "purescript-audiograph": "https://github.com/newlandsvalley/purescript-audiograph.git#0.2.0",
+    "purescript-halogen-components": "https://github.com/newlandsvalley/purescript-halogen-components.git#halogen5"
   },
   "devDependencies": {
     "purescript-psci-support": "^4.0.0"
