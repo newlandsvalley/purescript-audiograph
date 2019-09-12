@@ -4,25 +4,26 @@ module Audio.Graph.Parser (PositionedParseError(..), SymbolTable, parse) where
 
 import Audio.Graph (AudioGraph, NodeType(..), NodeDef(..), Reference(..))
 import Audio.Graph.Attributes (AudioAttribute, AttributeMap, AudioParamDef(..),
-  Time(..), TimeConstant, oscillatorTypeAttr, numberAttr, stringAttr, boolAttr,
-  audioParamsAttr, biquadFilterTypeAttr)
+     Coordinates, Time(..), TimeConstant, oscillatorTypeAttr, coordinatesAttr,
+     numberAttr, stringAttr, boolAttr, audioParamsAttr, biquadFilterTypeAttr)
 import Audio.WebAudio.BiquadFilterNode (readBiquadFilterType)
 import Audio.WebAudio.Oscillator (readOscillatorType)
+import Audio.WebAudio.PannerNode (DistanceModelType(..), PanningModelType(..))
 import Control.Alt ((<|>))
+import Data.Bifunctor (bimap)
 import Data.Either (Either)
 import Data.Int (toNumber)
 import Data.List (List(..), (:))
 import Data.List (singleton) as L
 import Data.List.NonEmpty (toList)
 import Data.Map (empty, fromFoldable)
-import Data.Bifunctor (bimap)
 import Data.Set (Set, fromFoldable, insert, member, singleton) as Set
 import Data.Tuple (Tuple(..))
 import Prelude (class Show, pure, show, (*>), (<$), (<$>), (<*), (<*>), (<<<), (<>), (==), (>>=))
 import Text.Parsing.StringParser (Parser(..), ParseError(..), Pos, fail, try)
-import Text.Parsing.StringParser.Combinators (choice, option, sepBy, sepBy1, (<?>))
+import Text.Parsing.StringParser.CodePoints (string, regex, skipSpaces)
+import Text.Parsing.StringParser.Combinators (between, choice, option, sepBy, sepBy1, (<?>))
 import Text.Parsing.StringParser.Num (numberOrInt, unsignedInt)
-import Text.Parsing.StringParser.String (string, regex, skipSpaces)
 
 -- | the symbol table currently just holds node ids
 type SymbolTable =
@@ -61,6 +62,7 @@ audioNode st =
     , stereoPannerNode st
     , dynamicsCompressorNode st
     , convolverNode st
+    , pannerNode st
     ]
       <?> "audio node"
 
@@ -113,6 +115,14 @@ stereoPannerNodeType :: Parser NodeType
 stereoPannerNodeType =
   StereoPannerType <$ keyWord "StereoPanner"
 
+pannerNode :: SymbolTable -> Parser (Tuple NodeDef SymbolTable)
+pannerNode st =
+  buildNode <$> pannerNodeType <*> nodeId st <*> pannerAttributes <*> connections
+
+pannerNodeType :: Parser NodeType
+pannerNodeType =
+  PannerType <$ keyWord "Panner"
+
 dynamicsCompressorNode :: SymbolTable -> Parser (Tuple NodeDef SymbolTable)
 dynamicsCompressorNode st =
   buildNode <$> dynamicsCompressorNodeType <*> nodeId st <*> dynamicsCompressorAttributes <*> connections
@@ -156,6 +166,23 @@ connection =
 parameterRef :: Parser Reference
 parameterRef =
   ParameterRef <$> identifier <*> ((string ".") *> identifier)
+
+-- coordinates
+coordinates :: Parser Coordinates
+coordinates =
+  between openRoundBracket closeRoundBracket coordinateAxes
+
+coordinateAxes :: Parser Coordinates
+coordinateAxes =
+  buildCoordinates <$> number <*> number <*> number
+
+-- vector params
+
+-- a general coordinates attribute  (X,Y,Z exes)
+coordinatesAttribute :: String -> Parser (Tuple String AudioAttribute)
+coordinatesAttribute paramName =
+  Tuple <$> keyWord paramName <*> (coordinatesAttr <$> coordinates)
+    <?> paramName
 
 -- scalar params
 
@@ -303,6 +330,80 @@ stereoPannerAttributes =
   (fromFoldable <<< L.singleton) <$>
     (openCurlyBracket *> (audioParamAttribute "pan") <* closeCurlyBracket)
 
+pannerAttributes :: Parser AttributeMap
+pannerAttributes =
+  fromFoldable <$>
+    (openCurlyBracket *> pannerAttributeList <* closeCurlyBracket)
+
+pannerAttributeList :: Parser (List (Tuple String AudioAttribute))
+pannerAttributeList =
+  sepBy
+    (choice
+      [
+        refDistanceAttribute
+      , maxDistanceAttribute
+      , rolloffFactorAttribute
+      , coneInnerAngleAttribute
+      , coneOuterAngleAttribute
+      , coneOuterGainAttribute
+      , audioParamAttribute "positionX"
+      , audioParamAttribute "positionY"
+      , audioParamAttribute "positionZ"
+      , audioParamAttribute "orientationX"
+      , audioParamAttribute "orientationY"
+      , audioParamAttribute "orientationZ"
+      , positionAttribute
+      , orientationAttribute
+      ]
+    ) comma
+
+distanceModelType :: Parser DistanceModelType
+distanceModelType =
+  choice
+    [ Linear <$ string "linear"
+    , Inverse <$ string "inverse"
+    , Exponential <$ string "exponential"
+    ]
+
+panningModelType :: Parser PanningModelType
+panningModelType =
+  choice
+    [ EqualPower <$ string "equalPower"
+    , HRTF <$ string "HRTF"
+    ]
+
+refDistanceAttribute :: Parser (Tuple String AudioAttribute)
+refDistanceAttribute =
+  numberAttribute "refDistance"
+
+maxDistanceAttribute :: Parser (Tuple String AudioAttribute)
+maxDistanceAttribute =
+  numberAttribute "maxDistance"
+
+rolloffFactorAttribute :: Parser (Tuple String AudioAttribute)
+rolloffFactorAttribute =
+  numberAttribute "rolloffFactor"
+
+coneInnerAngleAttribute :: Parser (Tuple String AudioAttribute)
+coneInnerAngleAttribute =
+  numberAttribute "coneInnerAngle"
+
+coneOuterAngleAttribute :: Parser (Tuple String AudioAttribute)
+coneOuterAngleAttribute =
+  numberAttribute "coneOuterAngle"
+
+coneOuterGainAttribute :: Parser (Tuple String AudioAttribute)
+coneOuterGainAttribute =
+  numberAttribute "coneOuterGain"
+
+positionAttribute :: Parser (Tuple String AudioAttribute)
+positionAttribute =
+  coordinatesAttribute "position"
+
+orientationAttribute :: Parser (Tuple String AudioAttribute)
+orientationAttribute =
+  coordinatesAttribute "orientation"
+
 -- dynamics compressor attributes
 
 dynamicsCompressorAttributes :: Parser AttributeMap
@@ -421,6 +522,14 @@ closeCurlyBracket :: Parser String
 closeCurlyBracket =
   string "}" <* skipSpaces
 
+openRoundBracket :: Parser String
+openRoundBracket =
+  string "(" <* skipSpaces
+
+closeRoundBracket :: Parser String
+closeRoundBracket =
+  string ")" <* skipSpaces
+
 endOfNodes :: SymbolTable -> Parser (Tuple AudioGraph SymbolTable)
 endOfNodes st =
   Tuple Nil st <$ string "End"
@@ -496,7 +605,13 @@ checkValidNodeId st nodeName =
     in
       pure (Tuple nodeName {nodeNames} )
 
+
+
 -- builders
+
+buildCoordinates :: Number -> Number -> Number -> Coordinates
+buildCoordinates x y z =
+  {x, y, z}
 
 buildNode :: NodeType -> Tuple String SymbolTable -> AttributeMap -> Set.Set Reference -> Tuple NodeDef SymbolTable
 buildNode nodeType (Tuple id st) attributes connections =

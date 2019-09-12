@@ -4,10 +4,10 @@ module Audio.Graph
 
 -- | Audio Graph data type
 
-import Audio.WebAudio.Types (AudioNode)
 import Audio.Graph.Attributes (AttributeMap)
-import Data.Map (Map)
+import Audio.WebAudio.Types (AudioNode)
 import Data.List (List)
+import Data.Map (Map)
 import Data.Set (Set)
 import Prelude (class Eq, class Ord)
 
@@ -24,6 +24,7 @@ data NodeType =
  | StereoPannerType
  | DynamicsCompressorType
  | ConvolverType
+ | PannerType
 
 -- | a reference
 data Reference =

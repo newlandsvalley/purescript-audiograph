@@ -11,7 +11,7 @@ import Global (readFloat)
 import Control.Alt ((<|>))
 import Text.Parsing.StringParser (Parser, try)
 import Text.Parsing.StringParser.Combinators (choice, optionMaybe, (<?>))
-import Text.Parsing.StringParser.String (string, regex)
+import Text.Parsing.StringParser.CodePoints (string, regex)
 
 -- | Parse a numeric sign, returning `1` for positive numbers and `-1`
 -- for negative numbers.

@@ -6,10 +6,10 @@ import Audio.Graph
 import Audio.Buffer (AudioBuffers)
 import Audio.Graph.Attributes (setOscillatorAttributes, setAudioBufferSourceAttributes,
     setGainAttributes, setDelayAttributes, setBiquadFilterAttributes,
-    setStereoPannerAttributes, setDynamicsCompressorAttributes,
+    setPannerAttributes, setStereoPannerAttributes, setDynamicsCompressorAttributes,
     setConvolverAttributes)
 import Audio.WebAudio.BaseAudioContext (createBufferSource, createOscillator,
-    createGain, createBiquadFilter, createConvolver,
+    createGain, createBiquadFilter, createConvolver, createPanner,
     createDelay, createStereoPanner, createDynamicsCompressor, destination, currentTime)
 import Audio.WebAudio.Types (AudioContext, AudioNode(..),  connect, connectParam)
 import Effect (Effect)
@@ -18,7 +18,6 @@ import Data.Map (insert, lookup, singleton)
 import Data.Maybe (Maybe(..))
 import Data.Set (Set)
 import Prelude (Unit, bind, pure, unit)
-
 
 -- | assemble the web-audio graph as a playable assemblage
 assemble :: AudioContext -> AudioBuffers -> AudioGraph -> Effect Assemblage
@@ -47,6 +46,8 @@ assembleNode ctx buffers ass (NodeDef nd) =
     StereoPannerType-> assembleStereoPanner ctx ass (NodeDef nd)
     DynamicsCompressorType-> assembleDynamicsCompressor ctx ass (NodeDef nd)
     ConvolverType -> assembleConvolver ctx ass buffers (NodeDef nd)
+    PannerType -> assemblePanner ctx ass (NodeDef nd)
+
 
 -- nodes
 
@@ -113,6 +114,17 @@ assembleStereoPanner ctx ass (NodeDef nd) =
     _ <- setStereoPannerAttributes now stereoPannerNode nd.attributes
     let
       ass' = insert nd.id (StereoPanner stereoPannerNode) ass
+    pure ass'
+
+assemblePanner :: AudioContext -> Assemblage -> NodeDef-> Effect Assemblage
+assemblePanner ctx ass (NodeDef nd) =
+  -- trace ("assembling stereo panner id: " <> nd.id) \_ ->
+  do
+    now <- currentTime ctx
+    pannerNode <- createPanner ctx
+    _ <- setPannerAttributes now pannerNode nd.attributes
+    let
+      ass' = insert nd.id (Panner pannerNode) ass
     pure ass'
 
 assembleDynamicsCompressor :: AudioContext -> Assemblage -> NodeDef-> Effect Assemblage
@@ -192,6 +204,8 @@ setConnection sourceNode ass target =
           connect n targetNode
         Destination n ->
           connect n targetNode
+        Panner n ->
+          connect n targetNode
     _ ->
       pure unit
 
@@ -224,6 +238,8 @@ setConnectionParam sourceNode ass target param =
         Convolver n ->
           connectParam n targetNode param
         Destination n ->
+          connectParam n targetNode param
+        Panner n ->
           connectParam n targetNode param
     _ ->
       pure unit

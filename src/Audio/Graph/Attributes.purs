@@ -1,45 +1,71 @@
 module Audio.Graph.Attributes
   (AudioAttribute, AttributeMap, AudioParamDef(..), Time(..), TimeConstant,
+   Coordinates,
    addOscillatorType, addFrequency,
    getOscillatorType, getNumber, getString, biquadFilterTypeAttr,
-   oscillatorTypeAttr, numberAttr, stringAttr, boolAttr, audioParamsAttr,
-   setOscillatorAttributes, setAudioBufferSourceAttributes,
+   oscillatorTypeAttr, coordinatesAttr, numberAttr, stringAttr, boolAttr,
+   audioParamsAttr, setOscillatorAttributes, setAudioBufferSourceAttributes,
    setGainAttributes, setDelayAttributes, setBiquadFilterAttributes,
-   setStereoPannerAttributes, setDynamicsCompressorAttributes,
-   setConvolverAttributes
+   setPannerAttributes, setStereoPannerAttributes,
+   setDynamicsCompressorAttributes, setConvolverAttributes
    ) where
 
 -- | Audio node attributes.  These are either simple or consist of
 -- | AudioParams (https://developer.mozilla.org/en-US/docs/Web/API/AudioParam)
 -- | which have special properties
 
-import Prelude (Unit, ($), (<$>), (<$), (#), (>>=), (+), identity, bind, pure, unit)
-import Effect (Effect)
-import Audio.WebAudio.Types (OscillatorNode, GainNode, BiquadFilterNode,
-  AudioBufferSourceNode, DelayNode, StereoPannerNode, ConvolverNode,
-  DynamicsCompressorNode, AudioParam, AudioBuffer)
-import Audio.WebAudio.Oscillator (OscillatorType, detune, frequency, setOscillatorType)
-import Audio.WebAudio.BiquadFilterNode (BiquadFilterType, setFilterType,
-   filterFrequency, quality)
-import Audio.WebAudio.GainNode (gain)
-import Audio.WebAudio.AudioParam (setValue, setValueAtTime, setTargetAtTime,
-  linearRampToValueAtTime, exponentialRampToValueAtTime)
-import Audio.WebAudio.AudioBufferSourceNode (setBuffer, setLoop, setLoopStart, setLoopEnd)
-import Audio.WebAudio.DelayNode (delayTime)
-import Audio.WebAudio.StereoPannerNode (pan)
-import Audio.WebAudio.DynamicsCompressorNode (threshold, knee, ratio, attack, release)
-import Audio.WebAudio.ConvolverNode (setBuffer, normalize) as Convolver
 import Audio.Buffer (AudioBuffers)
+import Audio.WebAudio.AudioBufferSourceNode (setBuffer, setLoop, setLoopStart, setLoopEnd)
+import Audio.WebAudio.AudioParam (setValue, setValueAtTime, setTargetAtTime, linearRampToValueAtTime, exponentialRampToValueAtTime)
+import Audio.WebAudio.BiquadFilterNode (BiquadFilterType, setFilterType, filterFrequency, quality)
+import Audio.WebAudio.ConvolverNode (setBuffer, normalize) as Convolver
+import Audio.WebAudio.DelayNode (delayTime)
+import Audio.WebAudio.DynamicsCompressorNode (threshold, knee, ratio, attack, release)
+import Audio.WebAudio.GainNode (gain)
+import Audio.WebAudio.Oscillator (OscillatorType, detune, frequency, setOscillatorType)
+import Audio.WebAudio.PannerNode (DistanceModelType, PanningModelType, setDistanceModel,
+     setPanningModel, setMaxDistance, setRefDistance, setRolloffFactor, setConeInnerAngle,
+     setConeOuterAngle, setConeOuterGain,
+     positionX, positionY, positionZ, setPosition,
+     orientationX,  orientationY, orientationZ, setOrientation)
+import Audio.WebAudio.StereoPannerNode (pan)
+import Audio.WebAudio.Types (OscillatorNode, GainNode, BiquadFilterNode, AudioBufferSourceNode, DelayNode, PannerNode, StereoPannerNode, ConvolverNode, DynamicsCompressorNode, AudioParam, AudioBuffer)
+import Data.Foldable (traverse_)
+import Data.List (List(..))
 import Data.Map (Map, insert, lookup)
 import Data.Maybe (Maybe(..), fromMaybe)
-import Data.List (List(..))
 import Data.Symbol (SProxy(..))
-import Data.Foldable (traverse_)
 import Data.Variant (Variant, inj, on, default)
+import Effect (Effect)
+import Prelude (class Eq, class Show, Unit, bind, identity, pure, show, unit, (#), ($), (+), (<$), (<$>), (>>=), (<>))
+
+
+-- | a coordinate axis
+data CoordinateAxis =
+    X
+  | Y
+  | Z
+
+instance showCoordinateAxis :: Show CoordinateAxis where
+  show X = "X"
+  show Y = "Y"
+  show Z = "Z"
+
+derive instance eqCoordinateAxis :: Eq CoordinateAxis
+
+-- | Spatial coordinates for Panner node properties
+type Coordinates =
+  { x :: Number
+  , y :: Number
+  , z :: Number
+  }
 
 -- | the (type of) an attribute of an audio node
 type AudioAttribute = Variant ( oscillatorType :: OscillatorType
                               , biquadFilterType :: BiquadFilterType
+                              , distanceModelType :: DistanceModelType
+                              , panningModelType :: PanningModelType
+                              , coordinates :: Coordinates
                               , number :: Number
                               , string :: String
                               , bool :: Boolean
@@ -68,6 +94,9 @@ data AudioParamDef =
 -- data types
 _oscillatorType = SProxy :: SProxy "oscillatorType"
 _biquadFilterType = SProxy :: SProxy "biquadFilterType"
+_distanceModelType = SProxy :: SProxy "distanceModelType"
+_panningModelType = SProxy :: SProxy "panningModelType"
+_coordinates = SProxy :: SProxy "coordinates"
 _number = SProxy :: SProxy "number"
 _string = SProxy :: SProxy "string"
 _bool = SProxy :: SProxy "bool"
@@ -81,6 +110,18 @@ oscillatorTypeAttr t =
 biquadFilterTypeAttr :: BiquadFilterType -> AudioAttribute
 biquadFilterTypeAttr t =
   inj _biquadFilterType t
+
+distanceModelTypeAttr :: DistanceModelType -> AudioAttribute
+distanceModelTypeAttr t =
+  inj _distanceModelType t
+
+panningModelTypeAttr :: PanningModelType -> AudioAttribute
+panningModelTypeAttr t =
+  inj _panningModelType t
+
+coordinatesAttr :: Coordinates -> AudioAttribute
+coordinatesAttr t =
+  inj _coordinates t
 
 numberAttr :: Number -> AudioAttribute
 numberAttr t =
@@ -99,7 +140,7 @@ audioParamsAttr t =
   inj _audioParams t
 
 
--- add attributes to the map - we probbaly don't need this section
+-- add attributes to the map - we probably don't need this section
 
 addOscillatorType :: AttributeMap -> OscillatorType -> AttributeMap
 addOscillatorType map t =
@@ -116,6 +157,11 @@ addFrequency map n =
     insert "frequency" attr map
 
 -- get an attribute from a variant (if it's there)
+
+getVCoordinates :: AudioAttribute -> Maybe Coordinates
+getVCoordinates =
+    default Nothing
+      # on _coordinates Just
 
 getVNumber :: AudioAttribute -> Maybe Number
 getVNumber =
@@ -156,6 +202,31 @@ getBiquadFilterType map =
       getBiquadVal =
         default Nothing
           # on _biquadFilterType Just
+
+-- get the diatnce model (panner node)
+getDistanceModel :: AttributeMap -> Maybe DistanceModelType
+getDistanceModel map =
+  (lookup "distanceModel" map) >>= getDistanceModelVal
+    where
+      getDistanceModelVal :: AudioAttribute -> Maybe DistanceModelType
+      getDistanceModelVal =
+        default Nothing
+          # on _distanceModelType Just
+
+-- get the panning model (panner node)
+getPanningModel :: AttributeMap -> Maybe PanningModelType
+getPanningModel map =
+  (lookup "panningModel" map) >>= getPanningModelVal
+    where
+      getPanningModelVal :: AudioAttribute -> Maybe PanningModelType
+      getPanningModelVal =
+        default Nothing
+          # on _panningModelType Just
+
+-- | get a named Coordinates attribute
+getCoordinates :: String -> AttributeMap -> Maybe Coordinates
+getCoordinates attName map =
+  (lookup attName map) >>= getVCoordinates
 
 -- | get a named Number attribute
 getNumber :: String -> AttributeMap -> Maybe Number
@@ -202,6 +273,7 @@ setBiquadFilterTypeAttr  bqf map =
       setFilterType t bqf
     _ ->
       pure unit
+
 
 -- | set the oscillator frequency
 setOscillatorFrequencyAttr :: Number -> OscillatorNode -> AttributeMap -> Effect Unit
@@ -280,6 +352,127 @@ setStereoPannerAttr startTime stereoPannerNode map =
       do
         panParam <- pan stereoPannerNode
         setParams startTime panParam ps
+
+
+-- | set the distance model
+setPannerDistanceModelAttr :: PannerNode -> AttributeMap -> Effect Unit
+setPannerDistanceModelAttr  p map =
+  case getDistanceModel map of
+    Just t ->
+      setDistanceModel t p
+    _ ->
+      pure unit
+
+-- | set the panning model
+setPannerPanningModelAttr :: PannerNode -> AttributeMap -> Effect Unit
+setPannerPanningModelAttr  p map =
+  case getPanningModel map of
+    Just t ->
+      setPanningModel t p
+    _ ->
+      pure unit
+
+setPannerRefDistanceAttr :: PannerNode-> AttributeMap -> Effect Unit
+setPannerRefDistanceAttr node map =
+  case getNumber "refDistance" map of
+    Just n ->
+      setRefDistance n node
+    _ ->
+      pure unit
+
+setPannerMaxDistanceAttr :: PannerNode-> AttributeMap -> Effect Unit
+setPannerMaxDistanceAttr node map =
+  case getNumber "xaxDistance" map of
+    Just n ->
+      setMaxDistance n node
+    _ ->
+      pure unit
+
+setPannerRolloffFactorAttr :: PannerNode-> AttributeMap -> Effect Unit
+setPannerRolloffFactorAttr node map =
+  case getNumber "rolloffFactor" map of
+    Just n ->
+      setRolloffFactor n node
+    _ ->
+      pure unit
+
+setPannerConeInnerAngleAttr :: PannerNode-> AttributeMap -> Effect Unit
+setPannerConeInnerAngleAttr node map =
+  case getNumber "coneInnerAngle" map of
+    Just n ->
+      setConeInnerAngle n node
+    _ ->
+      pure unit
+
+setPannerConeOuterAngleAttr :: PannerNode-> AttributeMap -> Effect Unit
+setPannerConeOuterAngleAttr node map =
+  case getNumber "coneOuterAngle" map of
+    Just n ->
+      setConeOuterAngle n node
+    _ ->
+      pure unit
+
+setPannerConeOuterGainAttr :: PannerNode-> AttributeMap -> Effect Unit
+setPannerConeOuterGainAttr node map =
+  case getNumber "coneOuterGain" map of
+    Just n ->
+      setConeOuterGain n node
+    _ ->
+      pure unit
+
+setPannerFullPositionAttr :: PannerNode-> AttributeMap -> Effect Unit
+setPannerFullPositionAttr node map =
+  case getCoordinates "position" map of
+    Just n ->
+      setPosition n node
+    _ ->
+      pure unit
+
+setPannerFullOrientationAttr :: PannerNode-> AttributeMap -> Effect Unit
+setPannerFullOrientationAttr node map =
+  case getCoordinates "orientation" map of
+    Just n ->
+      setOrientation n node
+    _ ->
+      pure unit
+
+-- | set the panner position along the requsted axis
+setPannerPositionAttr :: Number -> CoordinateAxis -> PannerNode -> AttributeMap -> Effect Unit
+setPannerPositionAttr startTime axis panner map =
+  let
+    attrName = "position" <> show axis
+    positionFunction =
+      case axis of
+        X -> positionX
+        Y -> positionY
+        Z -> positionZ
+  in
+    case getAudioParams attrName map of
+      Nil ->
+        pure unit
+      ps ->
+        do
+          audioParam <- positionFunction panner
+          setParams startTime audioParam ps
+
+-- | set the panner orientation along the requsted axis
+setPannerOrientationAttr :: Number -> CoordinateAxis -> PannerNode -> AttributeMap -> Effect Unit
+setPannerOrientationAttr startTime axis panner map =
+  let
+    attrName = "orientation" <> show axis
+    orientationFunction =
+      case axis of
+        X -> orientationX
+        Y -> orientationY
+        Z -> orientationZ
+  in
+    case getAudioParams attrName map of
+      Nil ->
+        pure unit
+      ps ->
+        do
+          audioParam <- orientationFunction panner
+          setParams startTime audioParam ps
 
 -- | set the compressor threshold
 setCompressorThresholdAttr :: Number -> DynamicsCompressorNode -> AttributeMap -> Effect Unit
@@ -425,6 +618,25 @@ setDelayAttributes startTime delayNode map = do
 setStereoPannerAttributes :: Number -> StereoPannerNode -> AttributeMap -> Effect Unit
 setStereoPannerAttributes startTime stereoPannerNode map = do
   setStereoPannerAttr startTime stereoPannerNode map
+
+setPannerAttributes :: Number -> PannerNode -> AttributeMap -> Effect Unit
+setPannerAttributes startTime node map = do
+  _ <- setPannerDistanceModelAttr node map
+  _ <- setPannerPanningModelAttr node map
+  _ <- setPannerRefDistanceAttr node map
+  _ <- setPannerMaxDistanceAttr node map
+  _ <- setPannerRolloffFactorAttr node map
+  _ <- setPannerConeInnerAngleAttr node map
+  _ <- setPannerConeOuterAngleAttr node map
+  _ <- setPannerConeOuterGainAttr node map
+  _ <- setPannerPositionAttr startTime X node map
+  _ <- setPannerPositionAttr startTime Y node map
+  _ <- setPannerPositionAttr startTime Z node map
+  _ <- setPannerOrientationAttr startTime X node map
+  _ <- setPannerOrientationAttr startTime Y node map
+  _ <- setPannerOrientationAttr startTime Z node map
+  _ <- setPannerFullPositionAttr node map
+  setPannerFullOrientationAttr node map
 
 setDynamicsCompressorAttributes :: Number -> DynamicsCompressorNode -> AttributeMap -> Effect Unit
 setDynamicsCompressorAttributes startTime dynamicsCompressorNode map = do

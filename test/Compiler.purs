@@ -95,8 +95,18 @@ basicSuite =
       assertCompiles ("Delay id1 { delayTime 2.0 } [ output ] End")
     test "stereo panner pan" do
       assertCompiles ("StereoPanner id1 { pan -0.8 } [ output ] End")
+    test "panner rolloff" do
+      assertCompiles ("Panner id1 { rolloffFactor 0.8 } [ output ] End")
+    test "panner position axes" do
+      assertCompiles ("Panner id1  { positionX [ setValueAtTime 0 1.0 ], positionY [ setValueAtTime 1 2.0 ]  } [ output ] End")
+    test "panner orientation axes" do
+      assertCompiles ("Panner id1  { orientationX [ setValueAtTime 0 1.0 ], orientationZ [ setValueAtTime 1 2.0 ]  } [ output ] End")
+    test "panner shorthand position" do
+      assertCompiles ("Panner id1  { position (2.0 3.0 4.0) } [ output ] End")
+    test "panner shorthand orientation" do
+      assertCompiles ("Panner id1  { orientation (2.0 3.0 4.0) } [ output ] End")
     test "dynamics compressor - complex audio param" do
-      assertCompiles ("DynamicsCompressor id1 { threshold [ setValueAtTime 2 -5.0, setValueAtTime 3 1.2 ] } [ output ] End")
+      assertCompiles ("DynamicsCompressor id1{ threshold [ setValueAtTime 2 -5.0, setValueAtTime 3 1.2 ] }  [ output ] End")
     test "dynamics compressor - 5 audio params" do
       assertCompiles ("DynamicsCompressor id1 { threshold -20, knee 30, ratio 10, attack 0.7, release 0.4 } [ output ] End")
     test "dynamics compressor - many and complex" do

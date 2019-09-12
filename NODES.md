@@ -60,6 +60,31 @@ A node that filters selected frequencies
 | quality   | Audio Param |
 | type      | lowpass, highpass, bandpass, lowshelf, highshelf, peaking, notch or allpass |
 
+Panner
+------
+
+A node that represents the position and behavior of an audio source signal in space.
+
+
+| Attribute | Type |
+| --------- | ---- |
+| distanceModel | linear, inverse, exponential | 
+| panningModel | equalPower, HRTF | 
+| coneInnerAngle | (0 <= p <= 360)|
+| coneOuterAngle | (0 <= p <= 360)|
+| coneOuterGain | Number |
+| maxDistance   | Number |
+| refDistance   | Number |
+| rolloffFactor | Number |
+| positionX     | AudioParam |
+| positionY     | AudioParam |
+| positionZ     | AudioParam |
+| orientationX  | AudioParam |
+| orientationY  | AudioParam |
+| orientationZ  | AudioParam |
+| position      | (Number Number Number) |
+| orientation   | (Number Number Number) |
+
 StereoPanner
 ------------
 

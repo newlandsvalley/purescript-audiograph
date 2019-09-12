@@ -15,11 +15,9 @@ import Data.Maybe (Maybe(..))
 import Data.List (List(..), concat, singleton)
 import Data.Traversable (traverse, sequence)
 import Data.Tuple (Tuple(..))
-import Network.HTTP.Affjax (affjax, defaultRequest)
-import Network.HTTP.Affjax.Response as Response
-import Network.HTTP.StatusCode (StatusCode(..))
-import Prelude (bind, pure, ($), (<$>), (<<<), (==), (<>))
-
+import Affjax (request, defaultRequest)
+import Affjax.ResponseFormat as ResponseFormat
+import Prelude (bind, pure, ($), (<$>), (<<<), (<>))
 
 -- | attempt to load the sound buffers for all nodes that identify them
 -- | (currently AudioBufferSourceNodes) and return an Error if any fail
@@ -67,6 +65,21 @@ loadSoundBuffer ::
   -> String
   -> Aff (Either String (Tuple String AudioBuffer))
 loadSoundBuffer ctx url = do
+    -- launchAff $ do
+      res <- request $ defaultRequest
+               { url = url, method = Left GET, responseFormat = ResponseFormat.arrayBuffer }
+
+      case res.body of
+        Left err ->
+          pure $ Left ("resource: " <> url <> " not found")
+        Right body -> do
+          buf <- decodeAudioDataAsync ctx body
+          pure $ Right (Tuple url buf)
+
+
+
+{-}
+
   res <- affjax Response.arrayBuffer $ defaultRequest { url = url, method = Left GET }
   if (res.status == StatusCode 200)
     then do
@@ -74,3 +87,4 @@ loadSoundBuffer ctx url = do
       pure $ Right (Tuple url buf)
     else
       pure $ Left ("resource: " <> url <> " not found")
+-}
