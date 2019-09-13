@@ -27,14 +27,15 @@ assemble ctx buffers graph =
     destNode <- destination ctx
     -- the assembled nodes always contain a destination node called 'output'
     let
-      ass = singleton "output" (Destination destNode)
+      node0 = singleton "output" (Destination destNode)
+      listener = Nothing
       --  foldM :: forall f m a b. Foldable f => Monad m => (a -> b -> m a) -> a -> f b -> m a
-    ass' <- foldM (assembleNode ctx buffers) ass graph
+    nodes <- foldM (assembleNode ctx buffers) node0 graph.nodeDefs
     -- assemble the connections after the node assemblage has been built
-    _ <- traverse_ (assembleConnections ass') graph
-    pure ass'
+    _ <- traverse_ (assembleConnections nodes ) graph.nodeDefs
+    pure { nodes, listener }
 
-assembleNode :: AudioContext -> AudioBuffers -> Assemblage -> NodeDef-> Effect Assemblage
+assembleNode :: AudioContext -> AudioBuffers -> AssembledNodes -> NodeDef-> Effect AssembledNodes
 assembleNode ctx buffers ass (NodeDef nd) =
   -- trace ("assemblage size: " <> (show $ size ass)) \_ ->
   case nd.nodeType of
@@ -51,7 +52,7 @@ assembleNode ctx buffers ass (NodeDef nd) =
 
 -- nodes
 
-assembleOscillator :: AudioContext -> Assemblage -> NodeDef-> Effect Assemblage
+assembleOscillator :: AudioContext -> AssembledNodes -> NodeDef-> Effect AssembledNodes
 assembleOscillator ctx ass (NodeDef nd) =
   -- trace ("assembling oscillator id: " <> nd.id) \_ ->
   do
@@ -62,7 +63,7 @@ assembleOscillator ctx ass (NodeDef nd) =
       ass' = insert nd.id (Oscillator oscNode) ass
     pure ass'
 
-assembleGain :: AudioContext -> Assemblage -> NodeDef-> Effect Assemblage
+assembleGain :: AudioContext -> AssembledNodes -> NodeDef-> Effect AssembledNodes
 assembleGain ctx ass (NodeDef nd) =
   -- trace ("assembling gain id: " <> nd.id) \_ ->
   do
@@ -73,7 +74,7 @@ assembleGain ctx ass (NodeDef nd) =
       ass' = insert nd.id (Gain gainNode) ass
     pure ass'
 
-assembleBiquadFilter :: AudioContext -> Assemblage -> NodeDef-> Effect Assemblage
+assembleBiquadFilter :: AudioContext -> AssembledNodes -> NodeDef-> Effect AssembledNodes
 assembleBiquadFilter ctx ass (NodeDef nd) =
   -- trace ("assembling biquad filter id: " <> nd.id) \_ ->
   do
@@ -84,7 +85,7 @@ assembleBiquadFilter ctx ass (NodeDef nd) =
       ass' = insert nd.id (BiquadFilter biquadFilterNode) ass
     pure ass'
 
-assembleAudioBufferSource :: AudioContext -> Assemblage -> AudioBuffers -> NodeDef-> Effect Assemblage
+assembleAudioBufferSource :: AudioContext -> AssembledNodes -> AudioBuffers -> NodeDef-> Effect AssembledNodes
 assembleAudioBufferSource ctx ass buffers (NodeDef nd) =
   -- trace ("assembling audio buffer source id: " <> nd.id) \_ ->
   do
@@ -94,7 +95,7 @@ assembleAudioBufferSource ctx ass buffers (NodeDef nd) =
       ass' = insert nd.id (AudioBufferSource audioBufferSourceNode) ass
     pure ass'
 
-assembleDelay :: AudioContext -> Assemblage -> NodeDef-> Effect Assemblage
+assembleDelay :: AudioContext -> AssembledNodes -> NodeDef-> Effect AssembledNodes
 assembleDelay ctx ass (NodeDef nd) =
   -- trace ("assembling delay id: " <> nd.id) \_ ->
   do
@@ -105,7 +106,7 @@ assembleDelay ctx ass (NodeDef nd) =
       ass' = insert nd.id (Delay delayNode) ass
     pure ass'
 
-assembleStereoPanner :: AudioContext -> Assemblage -> NodeDef-> Effect Assemblage
+assembleStereoPanner :: AudioContext -> AssembledNodes -> NodeDef-> Effect AssembledNodes
 assembleStereoPanner ctx ass (NodeDef nd) =
   -- trace ("assembling stereo panner id: " <> nd.id) \_ ->
   do
@@ -116,7 +117,7 @@ assembleStereoPanner ctx ass (NodeDef nd) =
       ass' = insert nd.id (StereoPanner stereoPannerNode) ass
     pure ass'
 
-assemblePanner :: AudioContext -> Assemblage -> NodeDef-> Effect Assemblage
+assemblePanner :: AudioContext -> AssembledNodes -> NodeDef-> Effect AssembledNodes
 assemblePanner ctx ass (NodeDef nd) =
   -- trace ("assembling stereo panner id: " <> nd.id) \_ ->
   do
@@ -127,7 +128,7 @@ assemblePanner ctx ass (NodeDef nd) =
       ass' = insert nd.id (Panner pannerNode) ass
     pure ass'
 
-assembleDynamicsCompressor :: AudioContext -> Assemblage -> NodeDef-> Effect Assemblage
+assembleDynamicsCompressor :: AudioContext -> AssembledNodes -> NodeDef-> Effect AssembledNodes
 assembleDynamicsCompressor ctx ass (NodeDef nd) =
   -- trace ("assembling dynamics compressor id: " <> nd.id) \_ ->
   do
@@ -138,7 +139,7 @@ assembleDynamicsCompressor ctx ass (NodeDef nd) =
       ass' = insert nd.id (DynamicsCompressor dynamicsCompressorNode) ass
     pure ass'
 
-assembleConvolver :: AudioContext -> Assemblage -> AudioBuffers -> NodeDef-> Effect Assemblage
+assembleConvolver :: AudioContext -> AssembledNodes -> AudioBuffers -> NodeDef-> Effect AssembledNodes
 assembleConvolver ctx ass buffers (NodeDef nd) =
   -- trace ("assembling convolver id: " <> nd.id) \_ ->
   do
@@ -151,7 +152,7 @@ assembleConvolver ctx ass buffers (NodeDef nd) =
 -- connections
 
 -- assemble connections from the node defined in the NodeDef
-assembleConnections :: Assemblage -> NodeDef-> Effect Unit
+assembleConnections :: AssembledNodes -> NodeDef-> Effect Unit
 assembleConnections ass (NodeDef nd) =
   -- trace ("assembling connections for node: " <> nd.id) \_ ->
   let
@@ -164,11 +165,11 @@ assembleConnections ass (NodeDef nd) =
         pure unit
 
 -- set all the connections from one node
-setConnections :: AudioNode -> Assemblage -> Set Reference -> Effect Unit
+setConnections :: AudioNode -> AssembledNodes -> Set Reference -> Effect Unit
 setConnections sourceNode ass targets =
   traverse_ (setConnectionRef sourceNode ass) targets
 
-setConnectionRef :: AudioNode -> Assemblage -> Reference  -> Effect Unit
+setConnectionRef :: AudioNode -> AssembledNodes -> Reference  -> Effect Unit
 setConnectionRef sourceNode ass ref =
   case ref of
     NodeRef nodeId ->
@@ -177,7 +178,7 @@ setConnectionRef sourceNode ass ref =
       setConnectionParam sourceNode ass nodeId parameterId
 
 -- set one connection from a node to a target node
-setConnection :: AudioNode -> Assemblage -> String  -> Effect Unit
+setConnection :: AudioNode -> AssembledNodes -> String  -> Effect Unit
 setConnection sourceNode ass target =
   -- trace ("connecting to target: " <> target) \_ ->
   case lookup target ass of
@@ -210,7 +211,7 @@ setConnection sourceNode ass target =
       pure unit
 
 -- set a connection from a node to an audio paramter on a target node
-setConnectionParam :: AudioNode -> Assemblage -> String  -> String -> Effect Unit
+setConnectionParam :: AudioNode -> AssembledNodes -> String  -> String -> Effect Unit
 setConnectionParam sourceNode ass target param =
   -- not yet implemented
   -- unsafeConnectParam modGainNode carrier "frequency"

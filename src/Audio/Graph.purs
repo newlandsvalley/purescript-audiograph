@@ -1,14 +1,15 @@
 module Audio.Graph
- (NodeId, NodeType(..), NodeDef(..), Reference(..),
-  AudioGraph,  Assemblage) where
+ (NodeId, NodeType(..), NodeDef(..), NodeDefs, Reference(..),
+  AudioGraph,  AssembledNodes, Assemblage, ListenerDef) where
 
 -- | Audio Graph data type
 
 import Audio.Graph.Attributes (AttributeMap)
-import Audio.WebAudio.Types (AudioNode)
+import Audio.WebAudio.Types (AudioNode, AudioListener)
 import Data.List (List)
 import Data.Map (Map)
 import Data.Set (Set)
+import Data.Maybe (Maybe)
 import Prelude (class Eq, class Ord)
 
 -- | an identifier of a node
@@ -42,8 +43,22 @@ data NodeDef = NodeDef
     , connections :: Set Reference     -- its connections to other modes
     }
 
+data ListenerDef = ListenerDef
+  { attributes :: AttributeMap }
+
+
+type NodeDefs = List NodeDef
+
 -- | A full graph
-type AudioGraph = List NodeDef
+type AudioGraph =
+  { nodeDefs :: List NodeDef
+  , listener :: Maybe ListenerDef
+  }
+
+type AssembledNodes = Map String AudioNode
 
 -- | A run-time assemblage of nodes built from the graph
-type Assemblage = Map String AudioNode
+type Assemblage =
+  { nodes :: AssembledNodes
+  , listener :: Maybe AudioListener
+  }

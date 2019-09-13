@@ -28,7 +28,7 @@ loadBuffers ::
   -> AudioGraph
   -> Aff (Either String AudioBuffers)
 loadBuffers ctx graph = do
-  ebuffs <- (sequence <<< concat) <$> traverse (loadNodeBuffer ctx) graph
+  ebuffs <- (sequence <<< concat) <$> traverse (loadNodeBuffer ctx) graph.nodeDefs
   pure $ either Left (Right <<< fromFoldable) ebuffs
 
 -- | nodes with resources that are attempted to be loaded are returned

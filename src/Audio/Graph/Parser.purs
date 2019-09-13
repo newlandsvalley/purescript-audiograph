@@ -2,7 +2,7 @@ module Audio.Graph.Parser (PositionedParseError(..), SymbolTable, parse) where
 
 -- | Parse a web-audio-graph DSL
 
-import Audio.Graph (AudioGraph, NodeType(..), NodeDef(..), Reference(..))
+import Audio.Graph (AudioGraph, NodeType(..), NodeDef(..), NodeDefs, ListenerDef, Reference(..))
 import Audio.Graph.Attributes (AudioAttribute, AttributeMap, AudioParamDef(..),
      Coordinates, Time(..), TimeConstant, oscillatorTypeAttr, coordinatesAttr,
      numberAttr, stringAttr, boolAttr, audioParamsAttr, biquadFilterTypeAttr)
@@ -17,6 +17,7 @@ import Data.List (List(..), (:))
 import Data.List (singleton) as L
 import Data.List.NonEmpty (toList)
 import Data.Map (empty, fromFoldable)
+import Data.Maybe (Maybe(..))
 import Data.Set (Set, fromFoldable, insert, member, singleton) as Set
 import Data.Tuple (Tuple(..))
 import Prelude (class Show, pure, show, (*>), (<$), (<$>), (<*), (<*>), (<<<), (<>), (==), (>>=))
@@ -35,11 +36,19 @@ initialSymbolTable :: SymbolTable
 initialSymbolTable =
   { nodeNames : Set.singleton("output") }
 
-audioNodes :: SymbolTable -> Parser (Tuple AudioGraph SymbolTable)
+audioGraph :: SymbolTable -> Parser (Tuple AudioGraph SymbolTable)
+audioGraph st =
+   buildGraph <$> (audioNodes st ) <*> audioListener
+
+audioNodes :: SymbolTable -> Parser (Tuple NodeDefs SymbolTable)
 audioNodes st =
   audioNode st >>= (\state -> moreNodesOrEnd state)
 
-moreNodesOrEnd :: Tuple NodeDef SymbolTable -> Parser (Tuple AudioGraph SymbolTable)
+audioListener :: Parser (Maybe ListenerDef)
+audioListener =
+  pure Nothing
+
+moreNodesOrEnd :: Tuple NodeDef SymbolTable -> Parser (Tuple NodeDefs SymbolTable)
 moreNodesOrEnd (Tuple lastNode st) =
   buildNodeList (Tuple lastNode st) <$>
     choice
@@ -530,7 +539,7 @@ closeRoundBracket :: Parser String
 closeRoundBracket =
   string ")" <* skipSpaces
 
-endOfNodes :: SymbolTable -> Parser (Tuple AudioGraph SymbolTable)
+endOfNodes :: SymbolTable -> Parser (Tuple NodeDefs SymbolTable)
 endOfNodes st =
   Tuple Nil st <$ string "End"
 
@@ -617,9 +626,13 @@ buildNode :: NodeType -> Tuple String SymbolTable -> AttributeMap -> Set.Set Ref
 buildNode nodeType (Tuple id st) attributes connections =
   Tuple (NodeDef{ nodeType, id, attributes, connections} ) st
 
-buildNodeList :: Tuple NodeDef SymbolTable -> Tuple (List NodeDef) SymbolTable -> Tuple AudioGraph SymbolTable
+buildNodeList :: Tuple NodeDef SymbolTable -> Tuple (List NodeDef) SymbolTable -> Tuple NodeDefs SymbolTable
 buildNodeList (Tuple n _) (Tuple ns st) =
   Tuple (n : ns) st
+
+buildGraph :: Tuple NodeDefs SymbolTable -> Maybe ListenerDef -> Tuple AudioGraph SymbolTable
+buildGraph (Tuple nodeDefs st) listener =
+  Tuple { nodeDefs, listener } st
 
 -- | a parse error and its accompanying position in the text
 newtype PositionedParseError = PositionedParseError
@@ -643,4 +656,4 @@ runParser1 (Parser p) s =
 -- | Parse an audio graph
 parse :: String -> Either PositionedParseError (Tuple AudioGraph SymbolTable)
 parse s =
-  runParser1 (audioNodes initialSymbolTable) s
+  runParser1 (audioGraph initialSymbolTable) s

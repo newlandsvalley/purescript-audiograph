@@ -15,12 +15,12 @@ import Audio.WebAudio.AudioBufferSourceNode (StartOptions, startBufferSource, st
 -- | start to play an Assemblage at the given time offset
 start :: Number -> Assemblage -> Effect Unit
 start delay assemblage =
-  traverse_ (startNode delay) assemblage
+  traverse_ (startNode delay) assemblage.nodes
 
 -- | stop playing an Assemblage after the supplied duration
 stop :: Number -> Assemblage -> Effect Unit
 stop delay assemblage =
-  traverse_ (stopNode delay) assemblage
+  traverse_ (stopNode delay) assemblage.nodes
 
 -- | start playing and then stop after the supplied duration
 startThenStop :: Number -> Number -> Assemblage

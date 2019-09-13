@@ -23,9 +23,9 @@ update ctx buffers ass graph =
   -- trace "updating graph" \_ ->
   do
     now <- currentTime ctx
-    traverse_ (updateNode now buffers ass) graph
+    traverse_ (updateNode now buffers ass.nodes) graph.nodeDefs
 
-updateNode :: Number -> AudioBuffers -> Assemblage -> NodeDef-> Effect Unit
+updateNode :: Number -> AudioBuffers -> AssembledNodes -> NodeDef-> Effect Unit
 updateNode startTime buffers ass (NodeDef nd) =
   -- trace ("update graph size: " <> (show $ size ass)) \_ ->
   case nd.nodeType of
@@ -41,7 +41,7 @@ updateNode startTime buffers ass (NodeDef nd) =
 
 -- nodes
 
-updateOscillator :: Number -> Assemblage -> NodeDef-> Effect Unit
+updateOscillator :: Number -> AssembledNodes -> NodeDef-> Effect Unit
 updateOscillator startTime ass (NodeDef nd) =
   -- trace ("updating oscillator id: " <> nd.id) \_ ->
   let
@@ -53,7 +53,7 @@ updateOscillator startTime ass (NodeDef nd) =
       _ ->
         pure unit
 
-updateGain :: Number -> Assemblage -> NodeDef-> Effect Unit
+updateGain :: Number -> AssembledNodes -> NodeDef-> Effect Unit
 updateGain startTime ass (NodeDef nd) =
   -- trace ("updating gain id: " <> nd.id) \_ ->
   let
@@ -65,7 +65,7 @@ updateGain startTime ass (NodeDef nd) =
       _ ->
         pure unit
 
-updateBiquadFilter :: Number -> Assemblage -> NodeDef-> Effect Unit
+updateBiquadFilter :: Number -> AssembledNodes -> NodeDef-> Effect Unit
 updateBiquadFilter startTime ass (NodeDef nd) =
   -- trace ("updating biquad filter id: " <> nd.id) \_ ->
   let
@@ -77,7 +77,7 @@ updateBiquadFilter startTime ass (NodeDef nd) =
       _ ->
         pure unit
 
-updateAudioBufferSource:: Assemblage -> AudioBuffers -> NodeDef-> Effect Unit
+updateAudioBufferSource:: AssembledNodes -> AudioBuffers -> NodeDef-> Effect Unit
 updateAudioBufferSource ass buffers (NodeDef nd) =
   -- trace ("updating audio buffer source id: " <> nd.id) \_ ->
   let
@@ -89,7 +89,7 @@ updateAudioBufferSource ass buffers (NodeDef nd) =
       _ ->
         pure unit
 
-updateDelay :: Number -> Assemblage -> NodeDef-> Effect Unit
+updateDelay :: Number -> AssembledNodes -> NodeDef-> Effect Unit
 updateDelay startTime ass (NodeDef nd) =
   -- trace ("updating delay id: " <> nd.id) \_ ->
   let
@@ -101,7 +101,7 @@ updateDelay startTime ass (NodeDef nd) =
       _ ->
         pure unit
 
-updateStereoPanner :: Number -> Assemblage -> NodeDef-> Effect Unit
+updateStereoPanner :: Number -> AssembledNodes -> NodeDef-> Effect Unit
 updateStereoPanner startTime ass (NodeDef nd) =
   -- trace ("updating stereo panner id: " <> nd.id) \_ ->
   let
@@ -113,7 +113,7 @@ updateStereoPanner startTime ass (NodeDef nd) =
       _ ->
         pure unit
 
-updatePanner :: Number -> Assemblage -> NodeDef-> Effect Unit
+updatePanner :: Number -> AssembledNodes -> NodeDef-> Effect Unit
 updatePanner startTime ass (NodeDef nd) =
   -- trace ("updating stereo panner id: " <> nd.id) \_ ->
   let
@@ -125,7 +125,7 @@ updatePanner startTime ass (NodeDef nd) =
       _ ->
         pure unit
 
-updateDynamicsCompressor:: Number -> Assemblage -> NodeDef-> Effect Unit
+updateDynamicsCompressor:: Number -> AssembledNodes -> NodeDef-> Effect Unit
 updateDynamicsCompressor startTime ass (NodeDef nd) =
   -- trace ("updating dynamics compressor id: " <> nd.id) \_ ->
   let
@@ -137,7 +137,7 @@ updateDynamicsCompressor startTime ass (NodeDef nd) =
       _ ->
         pure unit
 
-updateConvolver:: Assemblage -> AudioBuffers -> NodeDef-> Effect Unit
+updateConvolver:: AssembledNodes -> AudioBuffers -> NodeDef-> Effect Unit
 updateConvolver ass buffers (NodeDef nd) =
   -- trace ("updating convolver id: " <> nd.id) \_ ->
   let

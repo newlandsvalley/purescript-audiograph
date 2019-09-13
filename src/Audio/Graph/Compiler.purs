@@ -64,7 +64,7 @@ checkGraph st graph =
   let
     errors = empty
   in
-    foldl (checkNode st) errors graph
+    foldl (checkNode st) errors graph.nodeDefs
 
 -- check a node for identifier errors in its connections
 checkNode :: SymbolTable -> ErrorSet -> NodeDef -> ErrorSet
