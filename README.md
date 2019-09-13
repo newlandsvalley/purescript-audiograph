@@ -73,6 +73,11 @@ Nodes
 
 Each line defines a new Audio node in the graph starting with the node type and id.  The curly braces define attributes for the node which are either simple scalar values or else complex Audio Params (contained within square braces). The final square braces hold the connections from that node to any other node(s) or to audio parameters on those nodes. An implicit Destination node, named output, is always present by default.
 
+Audio Listener
+--------------
+
+An Audio Listener is an optional node with no explicit connections to other nodes in the graph. If present, it must be placed last in the node list, just before the __End__ marker. It does have implicit connections however - it listens to the sound created by the overall graph and tends to be used in conjunction with Panner nodes.
+
 Audio Params
 ------------
 

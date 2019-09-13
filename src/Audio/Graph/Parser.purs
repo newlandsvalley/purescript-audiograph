@@ -2,7 +2,7 @@ module Audio.Graph.Parser (PositionedParseError(..), SymbolTable, parse) where
 
 -- | Parse a web-audio-graph DSL
 
-import Audio.Graph (AudioGraph, NodeType(..), NodeDef(..), NodeDefs, ListenerDef, Reference(..))
+import Audio.Graph (AudioGraph, NodeType(..), NodeDef(..), ListenerDef(..), Reference(..))
 import Audio.Graph.Attributes (AudioAttribute, AttributeMap, AudioParamDef(..),
      Coordinates, Time(..), TimeConstant, oscillatorTypeAttr, coordinatesAttr,
      numberAttr, stringAttr, boolAttr, audioParamsAttr, biquadFilterTypeAttr)
@@ -17,19 +17,19 @@ import Data.List (List(..), (:))
 import Data.List (singleton) as L
 import Data.List.NonEmpty (toList)
 import Data.Map (empty, fromFoldable)
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe)
 import Data.Set (Set, fromFoldable, insert, member, singleton) as Set
 import Data.Tuple (Tuple(..))
 import Prelude (class Show, pure, show, (*>), (<$), (<$>), (<*), (<*>), (<<<), (<>), (==), (>>=))
 import Text.Parsing.StringParser (Parser(..), ParseError(..), Pos, fail, try)
 import Text.Parsing.StringParser.CodePoints (string, regex, skipSpaces)
-import Text.Parsing.StringParser.Combinators (between, choice, option, sepBy, sepBy1, (<?>))
+import Text.Parsing.StringParser.Combinators (between, choice, option, optionMaybe, sepBy, sepBy1, (<?>))
 import Text.Parsing.StringParser.Num (numberOrInt, unsignedInt)
 
 -- | the symbol table currently just holds node ids
 type SymbolTable =
-  { nodeNames :: Set.Set String
-  }
+  { nodeNames :: Set.Set String }
+
 
 -- there is always one implied node named output
 initialSymbolTable :: SymbolTable
@@ -38,22 +38,15 @@ initialSymbolTable =
 
 audioGraph :: SymbolTable -> Parser (Tuple AudioGraph SymbolTable)
 audioGraph st =
-   buildGraph <$> (audioNodes st ) <*> audioListener
-
-audioNodes :: SymbolTable -> Parser (Tuple NodeDefs SymbolTable)
-audioNodes st =
   audioNode st >>= (\state -> moreNodesOrEnd state)
 
-audioListener :: Parser (Maybe ListenerDef)
-audioListener =
-  pure Nothing
 
-moreNodesOrEnd :: Tuple NodeDef SymbolTable -> Parser (Tuple NodeDefs SymbolTable)
+moreNodesOrEnd :: Tuple NodeDef SymbolTable -> Parser (Tuple AudioGraph SymbolTable)
 moreNodesOrEnd (Tuple lastNode st) =
-  buildNodeList (Tuple lastNode st) <$>
+  buildGraph (Tuple lastNode st) <$>
     choice
       [ endOfNodes st
-      , audioNodes st
+      , audioGraph st
       ]
 
 -- parse any legitimate audio node and return it alongside the
@@ -82,7 +75,6 @@ oscillatorNode st =
 audioBufferSourceNode :: SymbolTable -> Parser (Tuple NodeDef SymbolTable)
 audioBufferSourceNode st =
   buildNode <$> audioBufferSourceNodeType <*> nodeId st <*> audioBufferSourceAttributes <*> connections
-
 
 gainNode :: SymbolTable -> Parser (Tuple NodeDef SymbolTable)
 gainNode st =
@@ -147,6 +139,10 @@ convolverNode st =
 convolverNodeType :: Parser NodeType
 convolverNodeType =
   ConvolverType <$ keyWord "Convolver"
+
+audioListener :: Parser ListenerDef
+audioListener =
+  buildListener <$> ((keyWord "Listener") *> listenerAttributes)
 
 nodeId :: SymbolTable -> Parser (Tuple String SymbolTable)
 nodeId st =
@@ -366,6 +362,31 @@ pannerAttributeList =
       ]
     ) comma
 
+listenerAttributes :: Parser AttributeMap
+listenerAttributes =
+  fromFoldable <$>
+    (openCurlyBracket *> listenerAttributeList <* closeCurlyBracket)
+
+listenerAttributeList :: Parser (List (Tuple String AudioAttribute))
+listenerAttributeList =
+  sepBy
+    (choice
+      [
+        audioParamAttribute "positionX"
+      , audioParamAttribute "positionY"
+      , audioParamAttribute "positionZ"
+      , audioParamAttribute "forwardX"
+      , audioParamAttribute "forwardY"
+      , audioParamAttribute "forwardZ"
+      , audioParamAttribute "upX"
+      , audioParamAttribute "upY"
+      , audioParamAttribute "upZ"
+      , positionAttribute
+      , orientationAttribute
+      ]
+    ) comma
+
+
 distanceModelType :: Parser DistanceModelType
 distanceModelType =
   choice
@@ -412,6 +433,7 @@ positionAttribute =
 orientationAttribute :: Parser (Tuple String AudioAttribute)
 orientationAttribute =
   coordinatesAttribute "orientation"
+
 
 -- dynamics compressor attributes
 
@@ -539,9 +561,10 @@ closeRoundBracket :: Parser String
 closeRoundBracket =
   string ")" <* skipSpaces
 
-endOfNodes :: SymbolTable -> Parser (Tuple NodeDefs SymbolTable)
+-- nodes are ended with End, optinally prefaced by a Listener
+endOfNodes :: SymbolTable -> Parser (Tuple AudioGraph SymbolTable)
 endOfNodes st =
-  Tuple Nil st <$ string "End"
+  buildNodeEnd st <$> ((optionMaybe audioListener) <* string "End")
 
 comma :: Parser String
 comma =
@@ -626,13 +649,20 @@ buildNode :: NodeType -> Tuple String SymbolTable -> AttributeMap -> Set.Set Ref
 buildNode nodeType (Tuple id st) attributes connections =
   Tuple (NodeDef{ nodeType, id, attributes, connections} ) st
 
-buildNodeList :: Tuple NodeDef SymbolTable -> Tuple (List NodeDef) SymbolTable -> Tuple NodeDefs SymbolTable
-buildNodeList (Tuple n _) (Tuple ns st) =
-  Tuple (n : ns) st
+buildGraph :: Tuple NodeDef SymbolTable -> Tuple AudioGraph SymbolTable -> Tuple AudioGraph SymbolTable
+buildGraph (Tuple n _) (Tuple ag st) =
+  let
+    nodeDefs = n : ag.nodeDefs
+  in
+    Tuple ag { nodeDefs = nodeDefs} st
 
-buildGraph :: Tuple NodeDefs SymbolTable -> Maybe ListenerDef -> Tuple AudioGraph SymbolTable
-buildGraph (Tuple nodeDefs st) listener =
-  Tuple { nodeDefs, listener } st
+buildNodeEnd :: SymbolTable -> Maybe ListenerDef -> Tuple AudioGraph SymbolTable
+buildNodeEnd st listener =
+  Tuple { nodeDefs : Nil, listener } st
+
+buildListener :: AttributeMap -> ListenerDef
+buildListener attributes =
+  ListenerDef { attributes }
 
 -- | a parse error and its accompanying position in the text
 newtype PositionedParseError = PositionedParseError

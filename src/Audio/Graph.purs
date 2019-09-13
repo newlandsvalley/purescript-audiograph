@@ -1,6 +1,6 @@
 module Audio.Graph
  (NodeId, NodeType(..), NodeDef(..), NodeDefs, Reference(..),
-  AudioGraph,  AssembledNodes, Assemblage, ListenerDef) where
+  AudioGraph,  AssembledNodes, Assemblage, ListenerDef(..)) where
 
 -- | Audio Graph data type
 

@@ -85,6 +85,26 @@ A node that represents the position and behavior of an audio source signal in sp
 | position      | (Number Number Number) |
 | orientation   | (Number Number Number) |
 
+Listener
+--------
+
+A connectionless node that listens to the sound created by an entire audiograph where that graph is controlled by a Panner. If present, it must be the final node in the graph.
+
+
+| Attribute | Type |
+| --------- | ---- |
+| positionX     | AudioParam |
+| positionY     | AudioParam |
+| positionZ     | AudioParam |
+| orientationX  | AudioParam |
+| orientationY  | AudioParam |
+| orientationZ  | AudioParam |
+| upX           | AudioParam |
+| upY           | AudioParam |
+| upZ           | AudioParam |
+| position      | (Number Number Number) |
+| orientation   | (Number Number Number) |
+
 StereoPanner
 ------------
 

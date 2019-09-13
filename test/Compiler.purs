@@ -96,7 +96,7 @@ basicSuite =
     test "stereo panner pan" do
       assertCompiles ("StereoPanner id1 { pan -0.8 } [ output ] End")
     test "panner rolloff" do
-      assertCompiles ("Panner id1 { rolloffFactor 0.8 } [ output ] End")
+      assertCompiles ("Panner id1 { rolloffFactor 0.8 } [ output ] Listener  { positionX [ setValueAtTime 0 1.0 ]} End")
     test "panner position axes" do
       assertCompiles ("Panner id1  { positionX [ setValueAtTime 0 1.0 ], positionY [ setValueAtTime 1 2.0 ]  } [ output ] End")
     test "panner orientation axes" do
