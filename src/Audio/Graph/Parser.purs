@@ -367,6 +367,8 @@ listenerAttributes =
   fromFoldable <$>
     (openCurlyBracket *> listenerAttributeList <* closeCurlyBracket)
 
+-- | we don't support the position and orientation methods on the AudioListener -
+-- | these have been deprecated in the web-audio spec of Sept 10th 2019.
 listenerAttributeList :: Parser (List (Tuple String AudioAttribute))
 listenerAttributeList =
   sepBy
@@ -381,8 +383,6 @@ listenerAttributeList =
       , audioParamAttribute "upX"
       , audioParamAttribute "upY"
       , audioParamAttribute "upZ"
-      , positionAttribute
-      , orientationAttribute
       ]
     ) comma
 

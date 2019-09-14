@@ -102,8 +102,6 @@ A connectionless node that listens to the sound created by an entire audiograph 
 | upX           | AudioParam |
 | upY           | AudioParam |
 | upZ           | AudioParam |
-| position      | (Number Number Number) |
-| orientation   | (Number Number Number) |
 
 StereoPanner
 ------------

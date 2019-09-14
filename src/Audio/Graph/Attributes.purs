@@ -6,7 +6,7 @@ module Audio.Graph.Attributes
    oscillatorTypeAttr, coordinatesAttr, numberAttr, stringAttr, boolAttr,
    audioParamsAttr, setOscillatorAttributes, setAudioBufferSourceAttributes,
    setGainAttributes, setDelayAttributes, setBiquadFilterAttributes,
-   setPannerAttributes, setStereoPannerAttributes,
+   setPannerAttributes, setStereoPannerAttributes, setListenerAttributes, 
    setDynamicsCompressorAttributes, setConvolverAttributes
    ) where
 
@@ -23,13 +23,13 @@ import Audio.WebAudio.DelayNode (delayTime)
 import Audio.WebAudio.DynamicsCompressorNode (threshold, knee, ratio, attack, release)
 import Audio.WebAudio.GainNode (gain)
 import Audio.WebAudio.Oscillator (OscillatorType, detune, frequency, setOscillatorType)
-import Audio.WebAudio.PannerNode (DistanceModelType, PanningModelType, setDistanceModel,
-     setPanningModel, setMaxDistance, setRefDistance, setRolloffFactor, setConeInnerAngle,
-     setConeOuterAngle, setConeOuterGain,
-     positionX, positionY, positionZ, setPosition,
-     orientationX,  orientationY, orientationZ, setOrientation)
+import Audio.WebAudio.PannerNode (DistanceModelType, PanningModelType, setDistanceModel, setPanningModel, setMaxDistance,
+    setRefDistance, setRolloffFactor, setConeInnerAngle, setConeOuterAngle, setConeOuterGain, positionX, positionY, positionZ,
+    setPosition, orientationX, orientationY, orientationZ, setOrientation)
+import Audio.WebAudio.AudioListener (positionX, positionY, positionZ, forwardX, forwardY, forwardZ,
+    upX, upY, upZ, setPosition, setOrientation) as L
 import Audio.WebAudio.StereoPannerNode (pan)
-import Audio.WebAudio.Types (OscillatorNode, GainNode, BiquadFilterNode, AudioBufferSourceNode, DelayNode, PannerNode, StereoPannerNode, ConvolverNode, DynamicsCompressorNode, AudioParam, AudioBuffer)
+import Audio.WebAudio.Types (AudioBuffer, AudioBufferSourceNode, AudioListener, AudioParam, BiquadFilterNode, ConvolverNode, DelayNode, DynamicsCompressorNode, GainNode, OscillatorNode, PannerNode, StereoPannerNode)
 import Data.Foldable (traverse_)
 import Data.List (List(..))
 import Data.Map (Map, insert, lookup)
@@ -474,6 +474,63 @@ setPannerOrientationAttr startTime axis panner map =
           audioParam <- orientationFunction panner
           setParams startTime audioParam ps
 
+-- | set the listener position along the requsted axis
+setListenerPositionAttr :: Number -> CoordinateAxis -> AudioListener -> AttributeMap -> Effect Unit
+setListenerPositionAttr startTime axis listener map =
+  let
+    attrName = "position" <> show axis
+    positionFunction =
+      case axis of
+        X -> L.positionX
+        Y -> L.positionY
+        Z -> L.positionZ
+  in
+    case getAudioParams attrName map of
+      Nil ->
+        pure unit
+      ps ->
+        do
+          audioParam <- positionFunction listener
+          setParams startTime audioParam ps
+
+-- | set the listener forward along the requsted axis
+setListenerForwardAttr :: Number -> CoordinateAxis -> AudioListener -> AttributeMap -> Effect Unit
+setListenerForwardAttr startTime axis listener map =
+  let
+    attrName = "forward" <> show axis
+    forwardFunction =
+      case axis of
+        X -> L.forwardX
+        Y -> L.forwardY
+        Z -> L.forwardZ
+  in
+    case getAudioParams attrName map of
+      Nil ->
+        pure unit
+      ps ->
+        do
+          audioParam <- forwardFunction listener
+          setParams startTime audioParam ps
+
+-- | set the listener up along the requsted axis
+setListenerUpAttr :: Number -> CoordinateAxis -> AudioListener -> AttributeMap -> Effect Unit
+setListenerUpAttr startTime axis listener map =
+  let
+    attrName = "up" <> show axis
+    upFunction =
+      case axis of
+        X -> L.upX
+        Y -> L.upY
+        Z -> L.upZ
+  in
+    case getAudioParams attrName map of
+      Nil ->
+        pure unit
+      ps ->
+        do
+          audioParam <- upFunction listener
+          setParams startTime audioParam ps
+
 -- | set the compressor threshold
 setCompressorThresholdAttr :: Number -> DynamicsCompressorNode -> AttributeMap -> Effect Unit
 setCompressorThresholdAttr startTime compressorNode map =
@@ -502,7 +559,6 @@ setCompressorParam startTime compressorNode attrName getf map =
       do
         param <- getf compressorNode
         setParams startTime param ps
-
 
 setAudioBufferAttr :: AudioBufferSourceNode -> AttributeMap -> AudioBuffers -> Effect Unit
 setAudioBufferAttr audioBufferNode attMap buffers =
@@ -637,6 +693,18 @@ setPannerAttributes startTime node map = do
   _ <- setPannerOrientationAttr startTime Z node map
   _ <- setPannerFullPositionAttr node map
   setPannerFullOrientationAttr node map
+
+setListenerAttributes :: Number -> AudioListener -> AttributeMap -> Effect Unit
+setListenerAttributes startTime node map = do
+  _ <- setListenerPositionAttr startTime X node map
+  _ <- setListenerPositionAttr startTime Y node map
+  _ <- setListenerPositionAttr startTime Z node map
+  _ <- setListenerForwardAttr startTime X node map
+  _ <- setListenerForwardAttr startTime Y node map
+  _ <- setListenerForwardAttr startTime Z node map
+  _ <- setListenerUpAttr startTime X node map
+  _ <- setListenerUpAttr startTime Y node map
+  setListenerUpAttr startTime Z node map
 
 setDynamicsCompressorAttributes :: Number -> DynamicsCompressorNode -> AttributeMap -> Effect Unit
 setDynamicsCompressorAttributes startTime dynamicsCompressorNode map = do

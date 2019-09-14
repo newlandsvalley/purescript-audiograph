@@ -6,18 +6,19 @@ import Audio.Graph
 import Audio.Buffer (AudioBuffers)
 import Audio.Graph.Attributes (setOscillatorAttributes, setAudioBufferSourceAttributes,
     setGainAttributes, setDelayAttributes, setBiquadFilterAttributes,
-    setPannerAttributes, setStereoPannerAttributes, setDynamicsCompressorAttributes,
-    setConvolverAttributes)
+    setPannerAttributes, setListenerAttributes, setStereoPannerAttributes,
+    setDynamicsCompressorAttributes, setConvolverAttributes)
 import Audio.WebAudio.BaseAudioContext (createBufferSource, createOscillator,
     createGain, createBiquadFilter, createConvolver, createPanner,
-    createDelay, createStereoPanner, createDynamicsCompressor, destination, currentTime)
-import Audio.WebAudio.Types (AudioContext, AudioNode(..),  connect, connectParam)
+    createDelay, createStereoPanner, createDynamicsCompressor, destination,
+    currentTime, listener)
+import Audio.WebAudio.Types (AudioContext, AudioNode(..),  AudioListener, connect, connectParam)
 import Effect (Effect)
 import Data.Foldable (traverse_, foldM)
 import Data.Map (insert, lookup, singleton)
 import Data.Maybe (Maybe(..))
 import Data.Set (Set)
-import Prelude (Unit, bind, pure, unit)
+import Prelude (Unit, ($), bind, pure, unit)
 
 -- | assemble the web-audio graph as a playable assemblage
 assemble :: AudioContext -> AudioBuffers -> AudioGraph -> Effect Assemblage
@@ -28,7 +29,7 @@ assemble ctx buffers graph =
     -- the assembled nodes always contain a destination node called 'output'
     let
       node0 = singleton "output" (Destination destNode)
-      listener = Nothing
+    listener <- assembleListener ctx graph.listener
       --  foldM :: forall f m a b. Foldable f => Monad m => (a -> b -> m a) -> a -> f b -> m a
     nodes <- foldM (assembleNode ctx buffers) node0 graph.nodeDefs
     -- assemble the connections after the node assemblage has been built
@@ -148,6 +149,17 @@ assembleConvolver ctx ass buffers (NodeDef nd) =
     let
       ass' = insert nd.id (Convolver convolverNode) ass
     pure ass'
+
+assembleListener :: AudioContext -> Maybe ListenerDef -> Effect (Maybe AudioListener)
+assembleListener ctx mListenerDef =
+  case mListenerDef of
+    Nothing ->
+      pure Nothing
+    Just (ListenerDef listenerDef) -> do
+      now <- currentTime ctx
+      audioListener <- listener ctx
+      _ <- setListenerAttributes now audioListener listenerDef.attributes
+      pure $ Just audioListener
 
 -- connections
 
