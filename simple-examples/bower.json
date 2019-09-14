@@ -7,10 +7,13 @@
     "output"
   ],
   "dependencies": {
-    "purescript-console": "^4.1.0",
-    "purescript-audiograph": "https://github.com/newlandsvalley/purescript-audiograph.git#0.2.0"
+    "purescript-console": "^4.2.0",
+    "purescript-audiograph": "https://github.com/newlandsvalley/purescript-audiograph.git#halogen5"
   },
   "devDependencies": {
     "purescript-psci-support": "^4.0.0"
+  },
+  "resolutions": {
+    "purescript-typelevel-prelude": ">= 4.0.0 < 6.0.0"
   }
 }

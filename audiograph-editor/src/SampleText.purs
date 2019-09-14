@@ -44,8 +44,8 @@ stereoPan =
   "    [ setValueAtTime -1.0  t + 0.1, \n" <>
   "      linearRampToValueAtTime 1.0 t +10 \n" <>
   "    ] } [ gain ] \n" <>
-"Gain gain { gain 0.5 } [ output ] \n" <>
-"End"
+  "Gain gain { gain 0.5 } [ output ] \n" <>
+  "End"
 
 dynamicsCompression :: String
 dynamicsCompression =
