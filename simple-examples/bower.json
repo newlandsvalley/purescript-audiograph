@@ -8,7 +8,7 @@
   ],
   "dependencies": {
     "purescript-console": "^4.2.0",
-    "purescript-audiograph": "https://github.com/newlandsvalley/purescript-audiograph.git#halogen5"
+    "purescript-audiograph": "https://github.com/newlandsvalley/purescript-audiograph.git#master"
   },
   "devDependencies": {
     "purescript-psci-support": "^4.0.0"
