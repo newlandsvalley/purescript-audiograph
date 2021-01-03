@@ -123,7 +123,7 @@ Building the Simple Examples
 
 cd to simple-examples:
     
-    $ npm simple-examples
+    $ npm run simple-examples
 
 
 Then host simple-examples/dist/index.html on your web server of choice.
