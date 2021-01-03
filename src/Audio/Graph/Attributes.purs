@@ -27,7 +27,7 @@ import Audio.WebAudio.PannerNode (DistanceModelType, PanningModelType, setDistan
     setRefDistance, setRolloffFactor, setConeInnerAngle, setConeOuterAngle, setConeOuterGain, positionX, positionY, positionZ,
     setPosition, orientationX, orientationY, orientationZ, setOrientation)
 import Audio.WebAudio.AudioListener (positionX, positionY, positionZ, forwardX, forwardY, forwardZ,
-    upX, upY, upZ, setPosition, setOrientation) as L
+    upX, upY, upZ) as L
 import Audio.WebAudio.StereoPannerNode (pan)
 import Audio.WebAudio.Types (AudioBuffer, AudioBufferSourceNode, AudioListener, AudioParam, BiquadFilterNode, ConvolverNode, DelayNode, DynamicsCompressorNode, GainNode, OscillatorNode, PannerNode, StereoPannerNode)
 import Data.Foldable (traverse_)

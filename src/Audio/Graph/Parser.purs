@@ -646,8 +646,8 @@ buildCoordinates x y z =
   {x, y, z}
 
 buildNode :: NodeType -> Tuple String SymbolTable -> AttributeMap -> Set.Set Reference -> Tuple NodeDef SymbolTable
-buildNode nodeType (Tuple id st) attributes connections =
-  Tuple (NodeDef{ nodeType, id, attributes, connections} ) st
+buildNode nodeType (Tuple id st) attributes connectionz =
+  Tuple (NodeDef{ nodeType, id, attributes, connections : connectionz} ) st
 
 buildGraph :: Tuple NodeDef SymbolTable -> Tuple AudioGraph SymbolTable -> Tuple AudioGraph SymbolTable
 buildGraph (Tuple n _) (Tuple ag st) =

@@ -100,6 +100,10 @@ Building the library
 
 from the current directory:
 
+    $ npm run build
+
+or
+
     $ bower install
     $ pulp build
 
@@ -110,10 +114,7 @@ __audiograph_editor__ is an editor (written in Halogen) for audiograph scripts t
 
 to build:
 
-cd to audiograph-editor
-
-    $ bower install
-    $ npm run build
+    $ npm run editor
 
 Then host audiograph-editor/dist/index.html on your web server of choice.    
 
@@ -121,9 +122,9 @@ Building the Simple Examples
 ----------------------------
 
 cd to simple-examples:
+    
+    $ npm simple-examples
 
-    $ bower install
-    $ npm run build
 
 Then host simple-examples/dist/index.html on your web server of choice.
 

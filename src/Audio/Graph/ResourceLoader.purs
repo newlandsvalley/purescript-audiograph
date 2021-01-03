@@ -65,26 +65,13 @@ loadSoundBuffer ::
   -> String
   -> Aff (Either String (Tuple String AudioBuffer))
 loadSoundBuffer ctx url = do
-    -- launchAff $ do
-      res <- request $ defaultRequest
-               { url = url, method = Left GET, responseFormat = ResponseFormat.arrayBuffer }
+  eres <- request $ defaultRequest
+            { url = url, method = Left GET, responseFormat = ResponseFormat.arrayBuffer }
 
-      case res.body of
-        Left err ->
-          pure $ Left ("resource: " <> url <> " not found")
-        Right body -> do
-          buf <- decodeAudioDataAsync ctx body
-          pure $ Right (Tuple url buf)
+  case eres of
+     Left err ->
+        pure $ Left ("resource: " <> url <> " not found")
+     Right res -> do
+       buf <- decodeAudioDataAsync ctx res.body
+       pure $ Right (Tuple url buf)
 
-
-
-{-}
-
-  res <- affjax Response.arrayBuffer $ defaultRequest { url = url, method = Left GET }
-  if (res.status == StatusCode 200)
-    then do
-      buf <- decodeAudioDataAsync ctx res.response
-      pure $ Right (Tuple url buf)
-    else
-      pure $ Left ("resource: " <> url <> " not found")
--}
