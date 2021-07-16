@@ -7,7 +7,7 @@ import Prelude ((<<<), (<$>), (<$), (*), (<*>), negate)
 import Partial.Unsafe (unsafePartial)
 import Data.Maybe (fromJust, fromMaybe)
 import Data.Int (fromString, toNumber)
-import Global (readFloat)
+import Data.Number (fromString) as Num
 import Control.Alt ((<|>))
 import Text.Parsing.StringParser (Parser, try)
 import Text.Parsing.StringParser.Combinators (choice, optionMaybe, (<?>))
@@ -26,13 +26,13 @@ int :: Parser Int
 int =
   (*)
     <$> sign
-    <*> (toInt <$> regex "(0|[1-9][0-9]*)")
+    <*> (readInt <$> regex "(0|[1-9][0-9]*)")
     <?> "expected an integer"
 
 -- | Parse an unsigned integer.
 unsignedInt :: Parser Int
 unsignedInt =
-  (toInt <$> regex "(0|[1-9][0-9]*)")
+  (readInt <$> regex "(0|[1-9][0-9]*)")
     <?> "expected an unsigned integer"
 
 
@@ -41,7 +41,7 @@ number :: Parser Number
 number =
   (*)
     <$> toNumber <$> sign
-    <*> (readFloat <$> regex "(0|[1-9][0-9]*)(\\.[0-9]+)")
+    <*> (readNumber <$> regex "(0|[1-9][0-9]*)(\\.[0-9]+)")
     <?> "expected a number"
 
 -- | Parse a number which may or may not have a decimal point
@@ -52,6 +52,14 @@ numberOrInt =
   <?> "expected a number (with or without decimal point)"
 
 
-toInt :: String -> Int
-toInt s =
+readInt :: String -> Int
+readInt s =
   unsafePartial (fromJust <<< fromString) s
+
+
+readNumber :: String -> Number
+readNumber s =
+  unsafePartial (fromJust <<< Num.fromString) s
+
+
+

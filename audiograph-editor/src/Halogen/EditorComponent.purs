@@ -7,7 +7,6 @@ import Data.String (null) as S
 import Data.String.CodeUnits (fromCharArray, toCharArray)
 import Data.Array (length, slice) as A
 import Audio.Graph (AudioGraph)
-import Audio.Graph.Parser (PositionedParseError(..))
 import Audio.Graph.Compiler (compile)
 import Data.Maybe (Maybe(..))
 import Halogen as H
@@ -18,10 +17,11 @@ import Halogen.HTML.Core (ClassName(..))
 import Halogen.HTML.CSS (style)
 import CSS (color)
 import Color (rgb)
+import Text.Parsing.StringParser (ParseError)
 
 type State =
   { text :: String
-  , parseError :: Maybe PositionedParseError
+  , parseError :: Maybe ParseError
   }
 
 type Slot = H.Slot Query Message
@@ -32,9 +32,9 @@ data Query a =
     UpdateContent String a
   | GetText (String -> a)
 
-data Message = AudioGraphResult (Either PositionedParseError AudioGraph)
+data Message = AudioGraphResult (Either ParseError AudioGraph)
 
-component :: ∀ i m. H.Component HH.HTML Query i Message m
+component :: ∀ i m. H.Component Query i Message m
 component =
   H.mkComponent
     { initialState
@@ -64,7 +64,7 @@ component =
          , HP.value state.text
          , HP.class_ $ ClassName "audioGraphEdit"
          -- , HP.wrap false
-         , HE.onValueInput (Just <<< UpdateContentAction)
+         , HE.onValueInput UpdateContentAction
          ]
       , renderParseError state
       ]
@@ -81,7 +81,7 @@ handleQuery = case _ of
   UpdateContent s next -> do
     let
       audioGraphResult = compile s
-      parseError = either Just (\success -> Nothing) audioGraphResult
+      parseError = either Just (\_ -> Nothing) audioGraphResult
     _ <- H.modify (\state -> state {text = s, parseError = parseError})
     H.raise $ AudioGraphResult audioGraphResult
     pure (Just next)
@@ -97,7 +97,7 @@ renderParseError state =
     txt = toCharArray state.text
   in
     case state.parseError of
-      Just (PositionedParseError pe) ->
+      Just pe ->
         if (S.null state.text) then
           HH.div_ []
         else

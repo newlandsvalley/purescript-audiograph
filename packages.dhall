@@ -104,25 +104,48 @@ in  upstream
       }
 -------------------------------
 -}
-
 let upstream =
-      https://github.com/purescript/package-sets/releases/download/psc-0.13.8-20201223/packages.dhall sha256:a1a8b096175f841c4fef64c9b605fb0d691229241fd2233f6cf46e213de8a185
+      https://github.com/purescript/package-sets/releases/download/psc-0.14.3-20210716/packages.dhall sha256:1f9af624ddfd5352455b7ac6df714f950d499e7e3c6504f62ff467eebd11042c
 
 in  upstream
   with webaudio =
-    { dependencies = [ "aff"
-                     , "arraybuffer"
-                     , "arraybuffer-types"
-                     , "arrays"
-                     , "effect"
-                     , "foldable-traversable"
-                     , "http-methods"
-                     , "lists"
-                     , "math"
-                     , "maybe"
-                     , "strings"
-                     , "tuples"
-                     , "web-events"]
-    , repo = "https://github.com/adkelley/purescript-webaudio.git"
-    , version = "v0.2.1"
+    { dependencies =
+      [ "aff"
+      , "arraybuffer"
+      , "arraybuffer-types"
+      , "arrays"
+      , "effect"
+      , "foldable-traversable"
+      , "http-methods"
+      , "lists"
+      , "math"
+      , "maybe"
+      , "strings"
+      , "tuples"
+      , "web-events"
+      ]
+    , repo = "https://github.com/newlandsvalley/purescript-webaudio"
+    , version = "ps014"
     }
+  with arraybuffer =
+    { dependencies =
+       [ "arraybuffer-types"
+       , "arrays"
+       , "effect"
+       , "float32"
+       , "foldable-traversable"
+       , "functions"
+       , "maybe"
+       , "nullable"
+       , "partial"
+       , "prelude"
+       , "refs"
+       , "tailrec"
+       , "typelevel"
+       , "typelevel-prelude"
+       , "uint"
+       , "unfoldable"
+       ]
+     , repo = "https://github.com/purescript-contrib/purescript-arraybuffer"
+     , version = "v11.0.1"
+     }      

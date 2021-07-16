@@ -7,15 +7,16 @@ import Data.Either (Either(..))
 import Data.List (List, length)
 import Data.Set (Set, empty, insert, member, toUnfoldable)
 import Data.Foldable (foldl, intercalate)
-import Audio.Graph.Parser (PositionedParseError(..), SymbolTable, parse)
+import Audio.Graph.Parser (SymbolTable, parse)
 import Audio.Graph (AudioGraph, NodeDef(..), Reference(..))
+import Text.Parsing.StringParser (ParseError)
 import Prelude (($), (<>))
 
 type ErrorSet = Set String
 
 
 -- | compile a graph definition and perform semantic checks
-compile :: String -> Either PositionedParseError AudioGraph
+compile :: String -> Either ParseError AudioGraph
 compile s =
   case parse s of
     Right (Tuple graph st)  ->
@@ -25,7 +26,7 @@ compile s =
       Left e
 
 -- | compile an update graph (which requires no semantic checks)
-compileUpdate :: String -> Either PositionedParseError AudioGraph
+compileUpdate :: String -> Either ParseError AudioGraph
 compileUpdate s =
   case parse s of
     Right (Tuple graph _)  ->
@@ -35,7 +36,7 @@ compileUpdate s =
       Left e
 
 
-semCheck :: SymbolTable -> AudioGraph -> Either PositionedParseError AudioGraph
+semCheck :: SymbolTable -> AudioGraph -> Either ParseError AudioGraph
 semCheck st graph =
   let
     errors :: List String
@@ -51,9 +52,9 @@ semCheck st graph =
         Left $ semanticError ("identifiers: " <> errorText <> " have not been defined")
 
 -- parcel up a semantic error in the same manner as a parse error
-semanticError :: String -> PositionedParseError
+semanticError :: String -> ParseError
 semanticError err =
-  PositionedParseError {
+  {
     pos : 0
   , error : err
   }

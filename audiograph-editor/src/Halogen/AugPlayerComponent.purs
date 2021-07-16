@@ -53,7 +53,7 @@ data Query a
 
 data Message = Toggled Boolean
 
-component :: AudioContext -> AudioGraph -> H.Component HH.HTML Query Unit Message Aff
+component :: AudioContext -> AudioGraph -> H.Component Query Unit Message Aff
 component ctx audioGraph  =
   H.mkComponent
     { initialState
@@ -85,7 +85,7 @@ component ctx audioGraph  =
     in
       HH.div_
         [ HH.button
-            [ HE.onClick (\_ -> Just ToggleAction)
+            [ HE.onClick (\_ -> ToggleAction)
             , HP.class_ $ ClassName "hoverable"
             ]
             [ HH.text label ]
@@ -139,7 +139,7 @@ isPlaying state =
 togglePlayStop :: State -> Aff State
 togglePlayStop state =
   case state.assemblage of
-    Right ass ->
+    Right _ ->
       stop state
     _ ->
       play state
@@ -159,7 +159,7 @@ play state = do
   let
     newState = state { assemblage = assemblage }
   -- play it if we can
-  _ <- liftEffect $ either (\err -> pure unit) (Control.start 0.0) assemblage
+  _ <- liftEffect $ either (\_ -> pure unit) (Control.start 0.0) assemblage
   pure newState
 
 -- stop the playing

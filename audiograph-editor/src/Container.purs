@@ -6,11 +6,9 @@ import Audio.WebAudio.Types (AudioContext)
 import Audio.Graph (AudioGraph)
 import Effect.Aff (Aff)
 import Data.Either (Either(..), either)
-import Audio.Graph.Parser  (PositionedParseError(..))
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.MediaType (MediaType(..))
 import DOM.HTML.Indexed.InputAcceptType (mediaType)
-import Data.Symbol (SProxy(..))
 import Halogen as H
 import Halogen.HTML as HH
 import Halogen.HTML.Properties as HP
@@ -20,10 +18,12 @@ import Halogen.SimpleButtonComponent as Button
 import Halogen.AugPlayerComponent as PC
 import JS.FileIO (Filespec, saveTextFile)
 import SampleText (randomSample)
+import Text.Parsing.StringParser (ParseError)
+import Type.Proxy (Proxy(..))
 
 type State =
   { ctx :: AudioContext
-  , graphResult :: Either PositionedParseError AudioGraph
+  , graphResult :: Either ParseError AudioGraph
   , fileName :: Maybe String
   }
 
@@ -44,15 +44,15 @@ augFileInputCtx =
   }
 
 -- | there is no audio graph yet
-nullGraph :: Either PositionedParseError AudioGraph
+nullGraph :: Either ParseError AudioGraph
 nullGraph =
-  Left (PositionedParseError { pos : 0, error : "" })
+  Left { pos : 0, error : "" }
 
-parseError :: Either PositionedParseError AudioGraph -> String
+parseError :: Either ParseError AudioGraph -> String
 parseError graphResult =
   case graphResult of
     Right _ -> "no errors"
-    Left (PositionedParseError ppe) -> "parse error: " <> ppe.error
+    Left ppe -> "parse error: " <> ppe.error
 
 type ChildSlots =
   ( editor :: ED.Slot Unit
@@ -63,14 +63,14 @@ type ChildSlots =
   , player :: PC.Slot Unit
   )
 
-_editor = SProxy :: SProxy "editor"
-_augfile = SProxy :: SProxy "augfile"
-_clear = SProxy :: SProxy "clear"
-_savefile = SProxy :: SProxy "savefile"
-_sample = SProxy :: SProxy "sample"
-_player = SProxy :: SProxy "player"
+_editor = Proxy :: Proxy "editor"
+_augfile = Proxy :: Proxy "augfile"
+_clear = Proxy :: Proxy "clear"
+_savefile = Proxy :: Proxy "savefile"
+_sample = Proxy :: Proxy "sample"
+_player = Proxy :: Proxy "player"
 
-component :: forall q i o. AudioContext -> H.Component HH.HTML q i o Aff
+component :: forall q i o. AudioContext -> H.Component q i o Aff
 component ctx =
   H.mkComponent
     { initialState
@@ -102,8 +102,8 @@ component ctx =
          [ HH.label
             [ HP.class_ (H.ClassName "labelAlignment") ]
             [ HH.text "load aug file:" ]
-         , HH.slot _augfile unit (FIC.component augFileInputCtx) unit (Just <<< HandleAugFile)
-         , HH.slot _sample unit (Button.component "example") unit (Just <<< HandleSampleButton)
+         , HH.slot _augfile unit (FIC.component augFileInputCtx) unit HandleAugFile
+         , HH.slot _sample unit (Button.component "example") unit HandleSampleButton
          ]
       ,  HH.div
           -- save
@@ -111,9 +111,9 @@ component ctx =
           [ HH.label
              [ HP.class_ (H.ClassName "labelAlignment") ]
              [ HH.text "save or clear:" ]
-          , HH.slot _savefile unit (Button.component "save") unit (Just <<< HandleSaveButton)
+          , HH.slot _savefile unit (Button.component "save") unit HandleSaveButton
           -- clear
-          , HH.slot _clear unit (Button.component "clear") unit (Just <<< HandleClearButton)
+          , HH.slot _clear unit (Button.component "clear") unit HandleClearButton
           ]
       ,  renderPlayButton state
       ]
@@ -121,7 +121,7 @@ component ctx =
       , HH.div
           [ HP.class_ (H.ClassName "rightPane") ]
           [
-            HH.slot _editor unit ED.component unit (Just <<< HandleNewAudioGraphText)
+            HH.slot _editor unit ED.component unit HandleNewAudioGraphText
           ]
     ]
 
@@ -133,9 +133,9 @@ component ctx =
         HH.div
           [ HP.class_ (H.ClassName "leftPanelComponent")]
           [
-            HH.slot _player unit (PC.component state.ctx audioGraph) unit (Just <<< HandleAugPlayer)
+            HH.slot _player unit (PC.component state.ctx audioGraph) unit HandleAugPlayer
           ]
-      Left err ->
+      Left _ ->
         HH.div_
           [  ]
 
@@ -143,16 +143,16 @@ component ctx =
   handleAction = case _ of
     HandleAugFile (FIC.FileLoaded filespec) -> do
       _ <- H.modify (\st -> st { fileName = Just filespec.name } )
-      _ <- H.query _editor unit $ H.tell (ED.UpdateContent filespec.contents)
-      _ <- H.query _player unit $ H.tell PC.Stop
+      _ <- H.tell _editor unit $ (ED.UpdateContent filespec.contents)
+      _ <- H.tell _player unit PC.Stop
       pure unit
     HandleClearButton (Button.Toggled _) -> do
       _ <- H.modify (\st -> st { fileName = Nothing } )
-      _ <- H.query _editor unit $ H.tell (ED.UpdateContent "")
-      _ <- H.query _player unit $ H.tell PC.Stop
+      _ <- H.tell _editor unit $ (ED.UpdateContent "")
+      _ <- H.tell _player unit PC.Stop
       pure unit
     HandleSaveButton (Button.Toggled _) -> do
-      maybeText <- H.query _editor unit $ H.request ED.GetText
+      maybeText <- H.request _editor unit ED.GetText
       state <- H.get
       let
         fileName = getFileName state
@@ -163,8 +163,8 @@ component ctx =
     HandleSampleButton (Button.Toggled _) -> do
       _ <- H.modify (\st -> st { fileName = Nothing } )
       sample <- H.liftEffect randomSample
-      _ <- H.query _editor unit $ H.tell (ED.UpdateContent sample)
-      _ <- H.query _player unit $ H.tell PC.Stop
+      _ <- H.tell _editor unit $ (ED.UpdateContent sample)
+      _ <- H.tell _player unit PC.Stop
       pure unit
     HandleNewAudioGraphText (ED.AudioGraphResult r) -> do
       _ <- refreshPlayerState r
@@ -176,12 +176,12 @@ component ctx =
 -- refresh the state of the player by passing it the tune result
 -- (if it had parsed OK)
 refreshPlayerState :: ∀ o.
-       Either PositionedParseError AudioGraph
+       Either ParseError AudioGraph
     -> H.HalogenM State Action ChildSlots o Aff Unit
 refreshPlayerState audioGraphResult = do
   _ <- either
-     (\_ -> H.query _player unit $ H.tell PC.Stop)
-     (\graph -> H.query _player unit $ H.tell (PC.HandleInput graph))
+     (\_ -> H.tell _player unit PC.Stop)
+     (\graph -> H.tell _player unit $ (PC.HandleInput graph))
      audioGraphResult
   pure unit
 

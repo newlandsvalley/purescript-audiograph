@@ -5,8 +5,6 @@ import Control.Monad.Free (Free)
 
 import Data.Either (Either(..))
 import Audio.Graph.Compiler (compile)
-import Audio.Graph.Parser (PositionedParseError(..))
-
 import Test.Unit (Test, TestF, suite, test, success, failure)
 import Test.Unit.Assert as Assert
 
@@ -17,11 +15,11 @@ assertCompileError s expected =
       compile s
   in
     case compileResult of
-      Right res ->
+      Right _ ->
         failure "compiles when it shouldn't"
 
-      Left (PositionedParseError ppe) ->
-        Assert.equal expected ppe.error
+      Left pe ->
+        Assert.equal expected pe.error
 
 assertCompiles :: String -> Test
 assertCompiles s =
@@ -30,7 +28,7 @@ assertCompiles s =
       compile s
   in
     case compileResult of
-      Right res ->
+      Right _ ->
         success
 
       Left err ->

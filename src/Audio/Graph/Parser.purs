@@ -1,4 +1,4 @@
-module Audio.Graph.Parser (PositionedParseError(..), SymbolTable, parse) where
+module Audio.Graph.Parser (SymbolTable, parse) where
 
 -- | Parse a web-audio-graph DSL
 
@@ -10,18 +10,17 @@ import Audio.WebAudio.BiquadFilterNode (readBiquadFilterType)
 import Audio.WebAudio.Oscillator (readOscillatorType)
 import Audio.WebAudio.PannerNode (DistanceModelType(..), PanningModelType(..))
 import Control.Alt ((<|>))
-import Data.Bifunctor (bimap)
 import Data.Either (Either)
 import Data.Int (toNumber)
 import Data.List (List(..), (:))
 import Data.List (singleton) as L
 import Data.List.NonEmpty (toList)
-import Data.Map (empty, fromFoldable)
+import Data.Map (fromFoldable)
 import Data.Maybe (Maybe)
 import Data.Set (Set, fromFoldable, insert, member, singleton) as Set
 import Data.Tuple (Tuple(..))
-import Prelude (class Show, pure, show, (*>), (<$), (<$>), (<*), (<*>), (<<<), (<>), (==), (>>=))
-import Text.Parsing.StringParser (Parser(..), ParseError(..), Pos, fail, try)
+import Prelude (pure, (*>), (<$), (<$>), (<*), (<*>), (<<<), (<>), (==), (>>=))
+import Text.Parsing.StringParser (Parser, ParseError, fail, runParser, try)
 import Text.Parsing.StringParser.CodePoints (string, regex, skipSpaces)
 import Text.Parsing.StringParser.Combinators (between, choice, option, optionMaybe, sepBy, sepBy1, (<?>))
 import Text.Parsing.StringParser.Num (numberOrInt, unsignedInt)
@@ -206,10 +205,12 @@ audioParamAttribute paramName =
     <?> paramName
 
 -- placeholder only
+{-}
 noAttributes :: Parser AttributeMap
 noAttributes =
   (pure empty) <$
       openCurlyBracket <*> closeCurlyBracket
+-}
 
 -- gain attributes
 
@@ -594,9 +595,11 @@ relativeTime :: Parser Time
 relativeTime =
   Relative <$> ((string "t" <* skipSpaces <* string "+" <* skipSpaces) *> number)
 
+{-}
 intAttribute :: Parser AudioAttribute
 intAttribute =
   (numberAttr <<< toNumber) <$> unsignedInt <* skipSpaces
+-}
 
 boolAttribute :: Parser AudioAttribute
 boolAttribute =
@@ -664,6 +667,7 @@ buildListener :: AttributeMap -> ListenerDef
 buildListener attributes =
   ListenerDef { attributes }
 
+{-}
 -- | a parse error and its accompanying position in the text
 newtype PositionedParseError = PositionedParseError
   { pos :: Int
@@ -672,18 +676,20 @@ newtype PositionedParseError = PositionedParseError
 
 instance showKeyPositionedParseError :: Show PositionedParseError where
   show (PositionedParseError err) = err.error <> " at position " <> show err.pos
+ 
 
 -- | Run a parser for an input string, returning either a positioned error or a result.
-runParser1 :: forall a. Parser a -> String -> Either PositionedParseError a
+runParser1 :: forall a. Parser a -> String -> Either ParseError a
 runParser1 (Parser p) s =
   let
-    formatErr :: { pos :: Pos, error :: ParseError } -> PositionedParseError
+    formatErr :: { pos :: Pos, error :: ParseError } -> ParseError
     formatErr { pos : pos, error : ParseError err } =
       PositionedParseError { pos : pos, error : err}
   in
     bimap formatErr _.result (p { str: s, pos: 0 })
+-} 
 
 -- | Parse an audio graph
-parse :: String -> Either PositionedParseError (Tuple AudioGraph SymbolTable)
+parse :: String -> Either ParseError (Tuple AudioGraph SymbolTable)
 parse s =
-  runParser1 (audioGraph initialSymbolTable) s
+  runParser (audioGraph initialSymbolTable) s
